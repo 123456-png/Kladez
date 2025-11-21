@@ -1,0 +1,81 @@
+{% extends "kladez_app/base.html" %}
+
+{% block content %}
+<div class="card">
+    <h2>Выполненные работы</h2>
+    
+    <!-- Простая форма фильтрации -->
+    <div style="background: #f8f9fa; padding: 1rem; border-radius: 5px; margin-bottom: 1rem;">
+        <form method="get" style="display: flex; gap: 1rem; align-items: end;">
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">С:</label>
+                <input type="date" name="date_from" value="{{ request.GET.date_from }}" style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">По:</label>
+                <input type="date" name="date_to" value="{{ request.GET.date_to }}" style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+            <div>
+                <button type="submit" style="padding: 0.5rem 1rem; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer;">Фильтровать</button>
+                <a href="{% url 'kladez_app:completed_works' %}" style="padding: 0.5rem 1rem; background: #95a5a6; color: white; border: none; border-radius: 4px; text-decoration: none; display: inline-block; margin-left: 0.5rem;">Сбросить</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Статистика -->
+    <div style="display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
+        <div style="background: #e8f5e8; padding: 0.5rem 1rem; border-radius: 4px;">
+            <strong>Всего работ:</strong> {{ total_count }}
+        </div>
+        <div style="background: #e8f4fd; padding: 0.5rem 1rem; border-radius: 4px;">
+            <strong>Общая стоимость:</strong> {{ total_cost }} ₽
+        </div>
+    </div>
+
+    <!-- Таблица работ -->
+    {% if works %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Дата</th>
+                    <th>Марка</th>
+                    <th>Модель</th>
+                    <th>Вид работ</th>
+                    <th>Стоимость</th>
+                    <th>Заметки</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for work in works %}
+                <tr>
+                    <td>{{ work.work_date|date:"d.m.Y" }}</td>
+                    <td>{{ work.car_brand.name }}</td>
+                    <td>{{ work.car_model.name }}</td>
+                    <td>
+                        <strong>{{ work.repair_type.category.name }}</strong><br>
+                        {{ work.repair_type.name }}
+                    </td>
+                    <td style="font-weight: bold; color: #27ae60;">{{ work.cost }} ₽</td>
+                    <td>
+                        {% if work.notes %}
+                            <span title="{{ work.notes }}">📝</span>
+                        {% endif %}
+                        {% if work.parts_used %}
+                            <span title="Запчасти: {{ work.parts_used }}">🔧</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p style="text-align: center; padding: 2rem; color: #7f8c8d;">
+            {% if request.GET.date_from or request.GET.date_to %}
+                Нет работ за выбранный период
+            {% else %}
+                Ещё нет выполненных работ
+            {% endif %}
+        </p>
+    {% endif %}
+</div>
+{% endblock %}

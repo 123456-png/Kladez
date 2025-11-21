@@ -1,0 +1,56 @@
+{% extends "kladez_app/base.html" %}
+
+{% block content %}
+<div class="card">
+    <h2>Справочник видов работ</h2>
+    
+    {% if categories_with_repairs %}
+        {% for category in categories_with_repairs %}
+        <div style="margin-bottom: 2rem; border-left: 4px solid #e74c3c; padding-left: 1rem;">
+            <h3 style="color: #2c3e50; margin-bottom: 1rem;">
+                 {{ category.name }}
+                {% if category.description %}
+                    <small style="color: #7f8c8d; font-weight: normal;">- {{ category.description }}</small>
+                {% endif %}
+            </h3>
+            
+            {% if category.repairtype_set.all %}
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1rem;">
+                    {% for repair in category.repairtype_set.all %}
+                    <div style="background: #f8f9fa; padding: 1rem; border-radius: 5px; border: 1px solid #e9ecef;">
+                        <h4 style="margin: 0 0 0.5rem 0; color: #2c3e50;">{{ repair.name }}</h4>
+                        
+                        {% if repair.description %}
+                            <div style="margin-bottom: 0.5rem;">
+                                {{ repair.description }}
+                            </div>
+                        {% endif %}
+                        
+                        <div style="display: flex; gap: 1rem; flex-wrap: wrap; font-size: 0.9rem;">
+                            {% if repair.typical_duration %}
+                                <span style="background: #d5edff; padding: 0.2rem 0.5rem; border-radius: 3px;">
+                                     {{ repair.typical_duration }}
+                                </span>
+                            {% endif %}
+                            
+                            {% if repair.complexity %}
+                                <span style="background: #ffeaa7; padding: 0.2rem 0.5rem; border-radius: 3px;">
+                                     {{ repair.complexity }}
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p style="color: #7f8c8d; font-style: italic;">Нет видов работ для этой категории</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+    {% else %}
+        <p style="text-align: center; padding: 2rem; color: #7f8c8d;">
+            Категории работ ещё не добавлены
+        </p>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends "kladez_app/base.html" %}
+
+{% block content %}
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-number">{{ total_brands }}</div>
+        <div class="stat-label">Марок авто</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ total_models }}</div>
+        <div class="stat-label">Моделей авто</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ total_repair_types }}</div>
+        <div class="stat-label">Видов работ</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ total_recent_works }}</div>
+        <div class="stat-label">Работ за 30 дней</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ total_revenue }} ₽</div>
+        <div class="stat-label">Доход за 30 дней</div>
+    </div>
+</div>
+
+<div class="card">
+    <h2>Последние выполненные работы</h2>
+    {% if recent_works %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Дата</th>
+                    <th>Автомобиль</th>
+                    <th>Вид работ</th>
+                    <th>Стоимость</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for work in recent_works %}
+                <tr>
+                    <td>{{ work.work_date|date:"d.m.Y" }}</td>
+                    <td>{{ work.car_brand.name }} {{ work.car_model.name }}</td>
+                    <td>{{ work.repair_type.name }}</td>
+                    <td>{{ work.cost }} ₽</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>Нет выполненных работ за последние 30 дней.</p>
+    {% endif %}
+</div>
+{% endblock %}

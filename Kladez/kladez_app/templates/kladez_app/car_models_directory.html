@@ -1,0 +1,54 @@
+{% extends "kladez_app/base.html" %}
+
+{% block content %}
+<div class="card">
+    <h2>Справочник моделей автомобилей</h2>
+    
+    {% if brands_with_models %}
+        {% for brand in brands_with_models %}
+        <div style="margin-bottom: 2rem; border-left: 4px solid #3498db; padding-left: 1rem;">
+            <h3 style="color: #2c3e50; margin-bottom: 1rem;">
+                🚗 {{ brand.name }}
+                {% if brand.description %}
+                    <small style="color: #7f8c8d; font-weight: normal;">- {{ brand.description }}</small>
+                {% endif %}
+            </h3>
+            
+            {% if brand.carmodel_set.all %}
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">
+                    {% for model in brand.carmodel_set.all %}
+                    <div style="background: #f8f9fa; padding: 1rem; border-radius: 5px; border: 1px solid #e9ecef;">
+                        <h4 style="margin: 0 0 0.5rem 0; color: #2c3e50;">{{ model.name }}</h4>
+                        
+                        {% if model.production_years %}
+                            <div style="margin-bottom: 0.5rem;">
+                                <strong>Годы выпуска:</strong> {{ model.production_years }}
+                            </div>
+                        {% endif %}
+                        
+                        {% if model.engine_options %}
+                            <div style="margin-bottom: 0.5rem;">
+                                <strong>Двигатели:</strong> {{ model.engine_options }}
+                            </div>
+                        {% endif %}
+                        
+                        {% if model.notes %}
+                            <div style="margin-bottom: 0.5rem; font-style: italic;">
+                                <strong>Особенности:</strong> {{ model.notes }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p style="color: #7f8c8d; font-style: italic;">Нет моделей для этой марки</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+    {% else %}
+        <p style="text-align: center; padding: 2rem; color: #7f8c8d;">
+            Марки автомобилей ещё не добавлены
+        </p>
+    {% endif %}
+</div>
+{% endblock %}
