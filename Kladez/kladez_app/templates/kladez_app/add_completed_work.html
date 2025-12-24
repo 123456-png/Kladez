@@ -1,0 +1,123 @@
+{% extends "kladez_app/base.html" %}
+
+{% block content %}
+<div class="card">
+    <h2>Добавить выполненную работу</h2>
+    
+    <form method="post" id="completed-work-form">
+        {% csrf_token %}
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <!-- Поля формы остаются без изменений -->
+            <div>
+                <label for="{{ form.work_date.id_for_label }}">{{ form.work_date.label }}</label>
+                {{ form.work_date }}
+                {{ form.work_date.errors }}
+            </div>
+
+            <div>
+                <label for="{{ form.cost.id_for_label }}">{{ form.cost.label }}</label>
+                {{ form.cost }}
+                {{ form.cost.errors }}
+            </div>
+
+            <div>
+                <label for="{{ form.car_brand.id_for_label }}">{{ form.car_brand.label }}</label>
+                {{ form.car_brand }}
+                {{ form.car_brand.errors }}
+            </div>
+
+            <div>
+                <label for="{{ form.car_model.id_for_label }}">{{ form.car_model.label }}</label>
+                <select name="car_model" id="id_car_model" required>
+                    <option value="">---------</option>
+                    <!-- Модели будут загружены через AJAX -->
+                </select>
+                {{ form.car_model.errors }}
+            </div>
+
+            <div style="grid-column: span 2;">
+                <label for="{{ form.repair_type.id_for_label }}">{{ form.repair_type.label }}</label>
+                {{ form.repair_type }}
+                {{ form.repair_type.errors }}
+            </div>
+
+            <div style="grid-column: span 2;">
+                <label for="{{ form.notes.id_for_label }}">{{ form.notes.label }}</label>
+                {{ form.notes }}
+                {{ form.notes.errors }}
+            </div>
+
+            <div style="grid-column: span 2;">
+                <label for="{{ form.parts_used.id_for_label }}">{{ form.parts_used.label }}</label>
+                {{ form.parts_used }}
+                {{ form.parts_used.errors }}
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+            <button type="submit" style="padding: 0.5rem 2rem; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                Сохранить работу
+            </button>
+            <a href="{% url 'kladez_app:completed_works' %}" style="padding: 0.5rem 1rem; background: #3498db; color: white; border-radius: 4px; text-decoration: none; display: inline-flex; align-items: center;">
+                Посмотреть все работы
+            </a>
+            <a href="{% url 'kladez_app:home' %}" style="padding: 0.5rem 1rem; background: #7f8c8d; color: white; border-radius: 4px; text-decoration: none; display: inline-flex; align-items: center;">
+                На главную
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- JavaScript остается без изменений -->
+<script>
+    document.getElementById('id_car_brand').addEventListener('change', function() {
+        const brandId = this.value;
+        const carModelSelect = document.getElementById('id_car_model');
+
+        if (brandId) {
+            carModelSelect.innerHTML = '<option value="">Загрузка...</option>';
+
+            fetch(`{% url 'kladez_app:load_car_models' %}?brand_id=${brandId}`)
+                .then(response => response.text())
+                .then(html => {
+                    carModelSelect.innerHTML = html;
+                })
+                .catch(error => {
+                    console.error('Error loading car models:', error);
+                    carModelSelect.innerHTML = '<option value="">Ошибка загрузки</option>';
+                });
+        } else {
+            carModelSelect.innerHTML = '<option value="">---------</option>';
+        }
+    });
+
+    window.addEventListener('DOMContentLoaded', function() {
+        const selectedBrand = document.getElementById('id_car_brand').value;
+        if (selectedBrand) {
+            document.getElementById('id_car_brand').dispatchEvent(new Event('change'));
+        }
+    });
+</script>
+
+<!-- Быстрые ссылки -->
+<div class="card" style="margin-top: 2rem;">
+    <h3>Быстрые ссылки</h3>
+    <div style="display: flex; gap: 1rem; margin-top: 1rem; flex-wrap: wrap;">
+        {% if user.is_superuser %}
+            <a href="{% url 'kladez_app:add_car_brand' %}" style="padding: 0.5rem 1rem; background: #3498db; color: white; border-radius: 4px; text-decoration: none;">
+                Добавить новую марку
+            </a>
+            <a href="{% url 'kladez_app:add_repair_type' %}" style="padding: 0.5rem 1rem; background: #e67e22; color: white; border-radius: 4px; text-decoration: none;">
+                Добавить вид работ
+            </a>
+        {% endif %}
+        <a href="{% url 'kladez_app:car_models_directory' %}" style="padding: 0.5rem 1rem; background: #2c3e50; color: white; border-radius: 4px; text-decoration: none;">
+            Справочник моделей
+        </a>
+        <a href="{% url 'kladez_app:repair_types_directory' %}" style="padding: 0.5rem 1rem; background: #e74c3c; color: white; border-radius: 4px; text-decoration: none;">
+            Справочник видов работ
+        </a>
+    </div>
+</div>
+{% endblock %}

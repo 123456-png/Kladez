@@ -1,0 +1,44 @@
+{% extends "kladez_app/base.html" %}
+
+{% block content %}
+<div class="card">
+    <h2>Вход в систему</h2>
+
+    <form method="post">
+        {% csrf_token %}
+
+        <div style="display: flex; flex-direction: column; gap: 1rem; max-width: 400px;">
+            {% for field in form %}
+            <div>
+                <label for="{{ field.id_for_label }}" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">
+                    {{ field.label }}
+                </label>
+                {{ field }}
+                {% if field.errors %}
+                <div style="color: #e74c3c; margin-top: 0.5rem;">
+                    {{ field.errors }}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+
+            {% if form.non_field_errors %}
+            <div style="color: #e74c3c; background: #ffeaea; padding: 0.5rem; border-radius: 4px;">
+                {% for error in form.non_field_errors %}
+                <p>{{ error }}</p>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div style="margin-top: 1rem;">
+                <button type="submit" style="padding: 0.5rem 2rem; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    Войти
+                </button>
+                <a href="{% url 'kladez_app:register' %}" style="padding: 0.5rem 1rem; margin-left: 1rem; color: #3498db; text-decoration: none;">
+                    Нет аккаунта? Зарегистрироваться
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

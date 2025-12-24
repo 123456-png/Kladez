@@ -1,0 +1,71 @@
+{% extends "kladez_app/base.html" %}
+
+{% block content %}
+<div class="card">
+    <h2>Добавить категорию работ</h2>
+    
+    <form method="post">
+        {% csrf_token %}
+        
+        <div style="display: flex; flex-direction: column; gap: 1rem; max-width: 500px;">
+            <div>
+                <label for="{{ form.name.id_for_label }}" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">
+                    Название категории
+                </label>
+                {{ form.name }}
+                {% if form.name.errors %}
+                <div style="color: #e74c3c; margin-top: 0.5rem;">
+                    {{ form.name.errors }}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div>
+                <label for="{{ form.description.id_for_label }}" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">
+                    Описание категории
+                </label>
+                {{ form.description }}
+                {% if form.description.errors %}
+                <div style="color: #e74c3c; margin-top: 0.5rem;">
+                    {{ form.description.errors }}
+                </div>
+                {% endif %}
+                <small style="color: #7f8c8d; display: block; margin-top: 0.5rem;">
+                    Общее описание категории работ
+                </small>
+            </div>
+            
+            <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                <button type="submit" style="padding: 0.5rem 2rem; background: #e67e22; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    Сохранить категорию
+                </button>
+                <a href="{% url 'kladez_app:repair_types_directory' %}" style="padding: 0.5rem 1rem; background: #95a5a6; color: white; border-radius: 4px; text-decoration: none; display: inline-block;">
+                    Отмена
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="card" style="margin-top: 2rem;">
+    <h3>Существующие категории работ</h3>
+    {% if categories %}
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 0.5rem; margin-top: 1rem;">
+            {% for category in categories %}
+            <div style="background: #f8f9fa; padding: 0.5rem; border-radius: 4px; border-left: 3px solid #e67e22;">
+                <strong>{{ category.name }}</strong>
+                {% if category.description %}
+                <div style="font-size: 0.9rem; color: #7f8c8d; margin-top: 0.25rem;">
+                    {{ category.description|truncatechars:50 }}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p style="color: #7f8c8d; text-align: center; padding: 1rem;">
+            Категории работ ещё не добавлены
+        </p>
+    {% endif %}
+</div>
+{% endblock %}

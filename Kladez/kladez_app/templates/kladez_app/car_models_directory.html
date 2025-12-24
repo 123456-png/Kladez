@@ -4,51 +4,219 @@
 <div class="card">
     <h2>Справочник моделей автомобилей</h2>
     
+    <!-- Фильтр для быстрого поиска -->
+    <div style="margin-bottom: 2rem; background: #f8f9fa; padding: 1rem; border-radius: 5px;">
+        <input type="text" id="searchInput" placeholder="Поиск по марке или модели..."
+               style="padding: 0.5rem; width: 300px; border: 1px solid #ddd; border-radius: 4px;">
+        <button onclick="searchModels()" style="padding: 0.5rem 1rem; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer;">
+            Найти
+        </button>
+        <button onclick="clearSearch()" style="padding: 0.5rem 1rem; background: #95a5a6; color: white; border: none; border-radius: 4px; cursor: pointer;">
+            Сбросить
+        </button>
+    </div>
+
     {% if brands_with_models %}
-        {% for brand in brands_with_models %}
-        <div style="margin-bottom: 2rem; border-left: 4px solid #3498db; padding-left: 1rem;">
-            <h3 style="color: #2c3e50; margin-bottom: 1rem;">
-                🚗 {{ brand.name }}
-                {% if brand.description %}
-                    <small style="color: #7f8c8d; font-weight: normal;">- {{ brand.description }}</small>
-                {% endif %}
-            </h3>
-            
-            {% if brand.carmodel_set.all %}
-                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">
-                    {% for model in brand.carmodel_set.all %}
-                    <div style="background: #f8f9fa; padding: 1rem; border-radius: 5px; border: 1px solid #e9ecef;">
-                        <h4 style="margin: 0 0 0.5rem 0; color: #2c3e50;">{{ model.name }}</h4>
-                        
-                        {% if model.production_years %}
-                            <div style="margin-bottom: 0.5rem;">
-                                <strong>Годы выпуска:</strong> {{ model.production_years }}
-                            </div>
-                        {% endif %}
-                        
-                        {% if model.engine_options %}
-                            <div style="margin-bottom: 0.5rem;">
-                                <strong>Двигатели:</strong> {{ model.engine_options }}
-                            </div>
-                        {% endif %}
-                        
-                        {% if model.notes %}
-                            <div style="margin-bottom: 0.5rem; font-style: italic;">
-                                <strong>Особенности:</strong> {{ model.notes }}
-                            </div>
-                        {% endif %}
-                    </div>
-                    {% endfor %}
+        <!-- Общая статистика -->
+        <div style="display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap;">
+            <div style="background: #e8f5e8; padding: 1rem; border-radius: 4px; min-width: 200px;">
+                <div style="font-size: 1.2rem; font-weight: bold; color: #27ae60;">
+                    {{ brands_with_models|length }}
                 </div>
-            {% else %}
-                <p style="color: #7f8c8d; font-style: italic;">Нет моделей для этой марки</p>
+                <div style="color: #7f8c8d;">Марок автомобилей</div>
+            </div>
+            <div style="background: #e8f4fd; padding: 1rem; border-radius: 4px; min-width: 200px;">
+                <div style="font-size: 1.2rem; font-weight: bold; color: #3498db;">
+                    {% with total=0 %}
+                        {% for brand in brands_with_models %}
+                            {% with brand.carmodel_set.all|length as count %}
+                                {% with total=total|add:count %}{% endwith %}
+                            {% endwith %}
+                        {% endfor %}
+                        {{ total }}
+                    {% endwith %}
+                </div>
+                <div style="color: #7f8c8d;">Всего моделей</div>
+            </div>
+        </div>
+
+        <!-- Детальный список марок и моделей -->
+        <div id="brandsList">
+            {% for brand in brands_with_models %}
+            <div class="brand-card" style="margin-bottom: 2rem; border: 1px solid #e9ecef; border-radius: 8px; overflow: hidden;">
+                <div style="background: #3498db; color: white; padding: 1rem; display: flex; justify-content: space-between; align-items: center; cursor: pointer;"
+                     onclick="toggleModels('models-{{ brand.id }}')">
+                    <h3 style="margin: 0;">
+                        {{ brand.name }}
+                        {% if brand.description %}
+                            <small style="font-weight: normal; font-size: 0.9rem; opacity: 0.9;">- {{ brand.description|truncatechars:50 }}</small>
+                        {% endif %}
+                    </h3>
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <span style="background: rgba(255,255,255,0.2); padding: 0.2rem 0.5rem; border-radius: 3px; font-size: 0.9rem;">
+                            {{ brand.carmodel_set.all|length }} моделей
+                        </span>
+                        <span id="icon-{{ brand.id }}">▼</span>
+                    </div>
+                </div>
+
+                <div id="models-{{ brand.id }}" style="display: none; padding: 1rem; background: #f8f9fa;">
+                    {% if brand.carmodel_set.all %}
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1rem;">
+                            {% for model in brand.carmodel_set.all %}
+                            <div style="background: white; padding: 1.5rem; border-radius: 5px; border: 1px solid #e9ecef; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                                    <h4 style="margin: 0; color: #2c3e50; font-size: 1.1rem;">{{ model.name }}</h4>
+                                    {% if model.production_years %}
+                                    <span style="background: #d5edff; padding: 0.2rem 0.5rem; border-radius: 3px; font-size: 0.8rem;">
+                                        {{ model.production_years }}
+                                    </span>
+                                    {% endif %}
+                                </div>
+
+                                <div style="margin-bottom: 0.5rem;">
+                                    <strong style="color: #7f8c8d; font-size: 0.9rem;">Идентификатор:</strong>
+                                    <span style="font-family: monospace; background: #f1f1f1; padding: 0.2rem 0.5rem; border-radius: 3px; font-size: 0.9rem;">
+                                        ID: {{ model.id }}
+                                    </span>
+                                </div>
+
+                                {% if model.engine_options %}
+                                    <div style="margin-bottom: 0.5rem;">
+                                        <strong style="color: #7f8c8d; font-size: 0.9rem;">Двигатели:</strong>
+                                        <div style="margin-top: 0.25rem;">{{ model.engine_options|linebreaks }}</div>
+                                    </div>
+                                {% endif %}
+
+                                {% if model.notes %}
+                                    <div style="margin-bottom: 0.5rem;">
+                                        <strong style="color: #7f8c8d; font-size: 0.9rem;">Особенности:</strong>
+                                        <div style="margin-top: 0.25rem; font-style: italic;">{{ model.notes|linebreaks }}</div>
+                                    </div>
+                                {% endif %}
+
+                                <div style="margin-top: 1rem; padding-top: 0.5rem; border-top: 1px solid #eee; font-size: 0.85rem; color: #95a5a6;">
+                                    <strong>Полное название:</strong> {{ brand.name }} {{ model.name }}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p style="text-align: center; padding: 2rem; color: #7f8c8d; font-style: italic;">
+                            Нет моделей для этой марки
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div style="margin-top: 2rem; text-align: center;">
+            <button onclick="expandAll()" style="padding: 0.5rem 1.5rem; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 0.5rem;">
+                Развернуть все
+            </button>
+            <button onclick="collapseAll()" style="padding: 0.5rem 1.5rem; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                Свернуть все
+            </button>
+        </div>
+    {% else %}
+        <div style="text-align: center; padding: 3rem; color: #7f8c8d;">
+            <h3 style="color: #95a5a6;">Марки автомобилей ещё не добавлены</h3>
+            <p style="margin-top: 1rem;">Начните с добавления первой марки автомобиля</p>
+            {% if user.is_superuser %}
+            <a href="{% url 'kladez_app:add_car_brand' %}" style="display: inline-block; margin-top: 1rem; padding: 0.5rem 1.5rem; background: #3498db; color: white; border-radius: 4px; text-decoration: none;">
+                Добавить первую марку
+            </a>
             {% endif %}
         </div>
-        {% endfor %}
-    {% else %}
-        <p style="text-align: center; padding: 2rem; color: #7f8c8d;">
-            Марки автомобилей ещё не добавлены
-        </p>
     {% endif %}
 </div>
+
+<script>
+    function toggleModels(modelId) {
+        const element = document.getElementById(modelId);
+        const icon = document.getElementById('icon-' + modelId.split('-')[1]);
+
+        if (element.style.display === 'none') {
+            element.style.display = 'block';
+            icon.textContent = '▲';
+        } else {
+            element.style.display = 'none';
+            icon.textContent = '▼';
+        }
+    }
+
+    function expandAll() {
+        const models = document.querySelectorAll('[id^="models-"]');
+        const icons = document.querySelectorAll('[id^="icon-"]');
+
+        models.forEach(element => {
+            element.style.display = 'block';
+        });
+
+        icons.forEach(icon => {
+            icon.textContent = '▲';
+        });
+    }
+
+    function collapseAll() {
+        const models = document.querySelectorAll('[id^="models-"]');
+        const icons = document.querySelectorAll('[id^="icon-"]');
+
+        models.forEach(element => {
+            element.style.display = 'none';
+        });
+
+        icons.forEach(icon => {
+            icon.textContent = '▼';
+        });
+    }
+
+    function searchModels() {
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        const brandCards = document.querySelectorAll('.brand-card');
+
+        brandCards.forEach(card => {
+            const brandName = card.querySelector('h3').textContent.toLowerCase();
+            let found = brandName.includes(searchTerm);
+
+            // Проверяем модели внутри бренда
+            const models = card.querySelectorAll('h4');
+            models.forEach(model => {
+                if (model.textContent.toLowerCase().includes(searchTerm)) {
+                    found = true;
+                }
+            });
+
+            if (found || searchTerm === '') {
+                card.style.display = 'block';
+                // Показываем модели, если найдено совпадение
+                if (searchTerm !== '') {
+                    const modelDiv = card.querySelector('[id^="models-"]');
+                    const icon = card.querySelector('[id^="icon-"]');
+                    if (modelDiv && modelDiv.style.display === 'none') {
+                        modelDiv.style.display = 'block';
+                        icon.textContent = '▲';
+                    }
+                }
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+
+    function clearSearch() {
+        document.getElementById('searchInput').value = '';
+        searchModels();
+    }
+
+    // Автоматически разворачиваем первый элемент
+    document.addEventListener('DOMContentLoaded', function() {
+        const firstBrand = document.querySelector('.brand-card');
+        if (firstBrand) {
+            const modelId = firstBrand.querySelector('[id^="models-"]').id;
+            toggleModels(modelId);
+        }
+    });
+</script>
 {% endblock %}

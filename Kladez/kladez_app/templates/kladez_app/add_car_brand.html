@@ -1,0 +1,72 @@
+{% extends "kladez_app/base.html" %}
+
+{% block content %}
+<div class="card">
+    <h2>Добавить новую марку автомобиля</h2>
+    
+    <form method="post">
+        {% csrf_token %}
+        
+        <div style="display: flex; flex-direction: column; gap: 1rem; max-width: 500px;">
+            <!-- Поля формы -->
+            <div>
+                <label for="{{ form.name.id_for_label }}" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">
+                    {{ form.name.label }}
+                </label>
+                {{ form.name }}
+                {% if form.name.errors %}
+                <div style="color: #e74c3c; margin-top: 0.5rem;">
+                    {{ form.name.errors }}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div>
+                <label for="{{ form.description.id_for_label }}" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">
+                    {{ form.description.label }}
+                </label>
+                {{ form.description }}
+                {% if form.description.errors %}
+                <div style="color: #e74c3c; margin-top: 0.5rem;">
+                    {{ form.description.errors }}
+                </div>
+                {% endif %}
+                <small style="color: #7f8c8d; display: block; margin-top: 0.5rem;">
+                    Например: Японский производитель, надежные автомобили
+                </small>
+            </div>
+            
+            <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                <button type="submit" style="padding: 0.5rem 2rem; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    Сохранить марку
+                </button>
+                <a href="{% url 'kladez_app:car_models_directory' %}" style="padding: 0.5rem 1rem; background: #95a5a6; color: white; border-radius: 4px; text-decoration: none; display: inline-block;">
+                    Отмена
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="card" style="margin-top: 2rem;">
+    <h3>Существующие марки</h3>
+    {% if brands %}
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.5rem; margin-top: 1rem;">
+            {% for brand in brands %}
+            <div style="background: #f8f9fa; padding: 0.5rem; border-radius: 4px; border-left: 3px solid #3498db;">
+                <strong>{{ brand.name }}</strong>
+                {% if brand.description %}
+                <div style="font-size: 0.9rem; color: #7f8c8d; margin-top: 0.25rem;">
+                    {{ brand.description|truncatechars:50 }}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p style="color: #7f8c8d; text-align: center; padding: 1rem;">
+            Марки автомобилей ещё не добавлены
+        </p>
+    {% endif %}
+</div>
+{% endblock %}

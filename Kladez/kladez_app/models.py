@@ -1,5 +1,7 @@
 from django.db import models
 from django.utils import timezone
+from django.utils.text import slugify
+from django.contrib.auth.models import User
 
 
 class CarBrand(models.Model):
@@ -12,7 +14,6 @@ class CarBrand(models.Model):
 
     def __str__(self):
         return self.name
-
 
 class CarModel(models.Model):
     brand = models.ForeignKey(CarBrand, on_delete=models.CASCADE, verbose_name="Марка")
@@ -47,6 +48,7 @@ class RepairType(models.Model):
     description = models.TextField(blank=True, verbose_name="Описание работ")
     typical_duration = models.CharField(max_length=50, blank=True, verbose_name="Типовая длительность")
     complexity = models.CharField(max_length=50, blank=True, verbose_name="Сложность")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Пользователь", null=True, blank=True)  # Новая связь с пользователем
 
     class Meta:
         verbose_name = "Вид работ"
@@ -64,6 +66,28 @@ class CompletedWork(models.Model):
     cost = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Стоимость работы")
     notes = models.TextField(blank=True, verbose_name="Заметки")
     parts_used = models.TextField(blank=True, verbose_name="Использованные запчасти")
+    slug = models.SlugField(max_length=255, unique=True, db_index=True, verbose_name="URL", null=True, blank=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Пользователь", null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        """Автоматически создаём slug при сохранении"""
+        if not self.slug or self.slug == "":
+            # Создаём slug из марки, модели и даты
+            base_slug = slugify(f"{self.car_brand.name} {self.car_model.name} {self.work_date}")
+            self.slug = base_slug
+
+            # Проверяем уникальность
+            counter = 1
+            while CompletedWork.objects.filter(slug=self.slug).exists():
+                self.slug = f"{base_slug}-{counter}"
+                counter += 1
+
+        super().save(*args, **kwargs)
+
+    def get_absolute_url(self):
+        """URL для детального просмотра работы"""
+        from django.urls import reverse
+        return reverse('completed_work_detail', kwargs={'slug': self.slug})
 
     class Meta:
         verbose_name = "Выполненная работа"

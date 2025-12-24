@@ -1,0 +1,130 @@
+{% extends "kladez_app/base.html" %}
+
+{% block content %}
+<div class="card">
+    <h2>Добавить новый вид работ</h2>
+
+    <form method="post">
+        {% csrf_token %}
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <!-- Поля формы -->
+            <div>
+                <label for="{{ form.category.id_for_label }}" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">
+                    {{ form.category.label }}
+                </label>
+                {{ form.category }}
+                {% if form.category.errors %}
+                <div style="color: #e74c3c; margin-top: 0.5rem;">
+                    {{ form.category.errors }}
+                </div>
+                {% endif %}
+            </div>
+
+            <div>
+                <label for="{{ form.name.id_for_label }}" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">
+                    {{ form.name.label }}
+                </label>
+                {{ form.name }}
+                {% if form.name.errors %}
+                <div style="color: #e74c3c; margin-top: 0.5rem;">
+                    {{ form.name.errors }}
+                </div>
+                {% endif %}
+            </div>
+
+            <div style="grid-column: span 2;">
+                <label for="{{ form.description.id_for_label }}" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">
+                    {{ form.description.label }}
+                </label>
+                {{ form.description }}
+                {% if form.description.errors %}
+                <div style="color: #e74c3c; margin-top: 0.5rem;">
+                    {{ form.description.errors }}
+                </div>
+                {% endif %}
+            </div>
+
+            <div>
+                <label for="{{ form.typical_duration.id_for_label }}" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">
+                    {{ form.typical_duration.label }}
+                </label>
+                {{ form.typical_duration }}
+                {% if form.typical_duration.errors %}
+                <div style="color: #e74c3c; margin-top: 0.5rem;">
+                    {{ form.typical_duration.errors }}
+                </div>
+                {% endif %}
+                <small style="color: #7f8c8d; display: block; margin-top: 0.5rem;">
+                    Например: 2-3 часа, 1 день
+                </small>
+            </div>
+
+            <div>
+                <label for="{{ form.complexity.id_for_label }}" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">
+                    {{ form.complexity.label }}
+                </label>
+                {{ form.complexity }}
+                {% if form.complexity.errors %}
+                <div style="color: #e74c3c; margin-top: 0.5rem;">
+                    {{ form.complexity.errors }}
+                </div>
+                {% endif %}
+                <small style="color: #7f8c8d; display: block; margin-top: 0.5rem;">
+                    Например: простая, средняя, сложная
+                </small>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+            <button type="submit" style="padding: 0.5rem 2rem; background: #e67e22; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                Сохранить вид работ
+            </button>
+            <a href="{% url 'kladez_app:repair_types_directory' %}" style="padding: 0.5rem 1rem; background: #95a5a6; color: white; border-radius: 4px; text-decoration: none; display: inline-block;">
+                Отмена
+            </a>
+        </div>
+    </form>
+</div>
+
+<div class="card" style="margin-top: 2rem;">
+    <h3>Существующие виды работ</h3>
+    {% if repair_types %}
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; margin-top: 1rem;">
+            {% for repair in repair_types %}
+            <div style="background: #f8f9fa; padding: 1rem; border-radius: 4px; border-left: 3px solid #e67e22;">
+                <div style="display: flex; justify-content: space-between; align-items: start;">
+                    <div>
+                        <strong>{{ repair.name }}</strong>
+                        <div style="color: #3498db; font-size: 0.9rem; margin-top: 0.25rem;">
+                            {{ repair.category.name }}
+                        </div>
+                    </div>
+                    {% if repair.complexity %}
+                    <span style="background: #ffeaa7; padding: 0.2rem 0.5rem; border-radius: 3px; font-size: 0.8rem;">
+                        {{ repair.complexity }}
+                    </span>
+                    {% endif %}
+                </div>
+
+                {% if repair.description %}
+                <div style="margin-top: 0.5rem; font-size: 0.9rem;">
+                    {{ repair.description|truncatechars:80 }}
+                </div>
+                {% endif %}
+
+                {% if repair.typical_duration %}
+                <div style="margin-top: 0.5rem; font-size: 0.85rem; color: #7f8c8d;">
+                    {{ repair.typical_duration }}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p style="color: #7f8c8d; text-align: center; padding: 1rem;">
+            Виды работ ещё не добавлены
+        </p>
+    {% endif %}
+</div>
+{% endblock %}

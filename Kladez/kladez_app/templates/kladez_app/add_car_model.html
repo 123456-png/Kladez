@@ -1,0 +1,132 @@
+{% extends "kladez_app/base.html" %}
+
+{% block content %}
+<div class="card">
+    <h2>Добавить модель автомобиля</h2>
+    
+    <form method="post">
+        {% csrf_token %}
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div>
+                <label for="{{ form.brand.id_for_label }}" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">
+                    Марка автомобиля
+                </label>
+                {{ form.brand }}
+                {% if form.brand.errors %}
+                <div style="color: #e74c3c; margin-top: 0.5rem;">
+                    {{ form.brand.errors }}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div>
+                <label for="{{ form.name.id_for_label }}" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">
+                    Модель
+                </label>
+                {{ form.name }}
+                {% if form.name.errors %}
+                <div style="color: #e74c3c; margin-top: 0.5rem;">
+                    {{ form.name.errors }}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div>
+                <label for="{{ form.production_years.id_for_label }}" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">
+                    Годы выпуска
+                </label>
+                {{ form.production_years }}
+                {% if form.production_years.errors %}
+                <div style="color: #e74c3c; margin-top: 0.5rem;">
+                    {{ form.production_years.errors }}
+                </div>
+                {% endif %}
+                <small style="color: #7f8c8d; display: block; margin-top: 0.5rem;">
+                    Например: 2010-2015, 2018-н.в.
+                </small>
+            </div>
+            
+            <div>
+                <label for="{{ form.engine_options.id_for_label }}" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">
+                    Двигатели
+                </label>
+                {{ form.engine_options }}
+                {% if form.engine_options.errors %}
+                <div style="color: #e74c3c; margin-top: 0.5rem;">
+                    {{ form.engine_options.errors }}
+                </div>
+                {% endif %}
+                <small style="color: #7f8c8d; display: block; margin-top: 0.5rem;">
+                    Например: 1.6L, 2.0L Turbo, 3.0L V6
+                </small>
+            </div>
+            
+            <div style="grid-column: span 2;">
+                <label for="{{ form.notes.id_for_label }}" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">
+                    Особенности
+                </label>
+                {{ form.notes }}
+                {% if form.notes.errors %}
+                <div style="color: #e74c3c; margin-top: 0.5rem;">
+                    {{ form.notes.errors }}
+                </div>
+                {% endif %}
+                <small style="color: #7f8c8d; display: block; margin-top: 0.5rem;">
+                    Технические особенности, распространенные проблемы
+                </small>
+            </div>
+        </div>
+        
+                <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+            <button type="submit" style="padding: 0.5rem 2rem; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                Сохранить модель
+            </button>
+            <a href="{% url 'kladez_app:car_models_directory' %}" style="padding: 0.5rem 1rem; background: #27ae60; color: white; border-radius: 4px; text-decoration: none; display: inline-flex; align-items: center;">
+                В справочник моделей
+            </a>
+            <a href="{% url 'kladez_app:add_car_brand' %}" style="padding: 0.5rem 1rem; background: #e67e22; color: white; border-radius: 4px; text-decoration: none; display: inline-flex; align-items: center;">
+                Добавить марку
+            </a>
+        </div>
+    </form>
+</div>
+
+<div class="card" style="margin-top: 2rem;">
+    <h3>Существующие модели автомобилей</h3>
+    {% if car_models %}
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; margin-top: 1rem;">
+            {% for model in car_models %}
+            <div style="background: #f8f9fa; padding: 1rem; border-radius: 4px; border-left: 3px solid #3498db;">
+                <div style="display: flex; justify-content: space-between; align-items: start;">
+                    <div>
+                        <strong>{{ model.brand.name }} {{ model.name }}</strong>
+                        {% if model.production_years %}
+                        <div style="color: #3498db; font-size: 0.9rem; margin-top: 0.25rem;">
+                            {{ model.production_years }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                {% if model.engine_options %}
+                <div style="margin-top: 0.5rem; font-size: 0.9rem;">
+                    <strong>Двигатели:</strong> {{ model.engine_options|truncatechars:50 }}
+                </div>
+                {% endif %}
+                
+                {% if model.notes %}
+                <div style="margin-top: 0.5rem; font-size: 0.9rem;">
+                    {{ model.notes|truncatechars:80 }}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p style="color: #7f8c8d; text-align: center; padding: 1rem;">
+            Модели автомобилей ещё не добавлены
+        </p>
+    {% endif %}
+</div>
+{% endblock %}

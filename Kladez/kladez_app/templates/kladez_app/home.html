@@ -2,30 +2,50 @@
 
 {% block content %}
 <div class="stats-grid">
-    <div class="stat-card">
-        <div class="stat-number">{{ total_brands }}</div>
-        <div class="stat-label">Марок авто</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-number">{{ total_models }}</div>
-        <div class="stat-label">Моделей авто</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-number">{{ total_repair_types }}</div>
-        <div class="stat-label">Видов работ</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-number">{{ total_recent_works }}</div>
-        <div class="stat-label">Работ за 30 дней</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-number">{{ total_revenue }} ₽</div>
-        <div class="stat-label">Доход за 30 дней</div>
-    </div>
+    <a href="{% url 'kladez_app:car_models_directory' %}" class="stat-link">
+        <div class="stat-card">
+            <div class="stat-number">{{ total_brands }}</div>
+            <div class="stat-label">Марок авто</div>
+        </div>
+    </a>
+
+    <a href="{% url 'kladez_app:car_models_directory' %}" class="stat-link">
+        <div class="stat-card">
+            <div class="stat-number">{{ total_models }}</div>
+            <div class="stat-label">Моделей авто</div>
+        </div>
+    </a>
+
+    <a href="{% url 'kladez_app:repair_types_directory' %}" class="stat-link">
+        <div class="stat-card">
+            <div class="stat-number">{{ total_repair_types }}</div>
+            <div class="stat-label">Видов работ</div>
+        </div>
+    </a>
+
+    <a href="{% url 'kladez_app:completed_works' %}{% if last_30_days_date %}?date_from={{ last_30_days_date|date:'Y-m-d' }}{% endif %}" class="stat-link">
+        <div class="stat-card">
+            <div class="stat-number">{{ total_recent_works }}</div>
+            <div class="stat-label">Работ за 30 дней</div>
+        </div>
+    </a>
+
+    <a href="{% url 'kladez_app:completed_works' %}" class="stat-link">
+        <div class="stat-card">
+            <div class="stat-number">{{ total_revenue|floatformat:0 }}</div>
+            <div class="stat-label">Выручка за 30 дней (₽)</div>
+        </div>
+    </a>
 </div>
 
 <div class="card">
-    <h2>Последние выполненные работы</h2>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h2>Последние выполненные работы</h2>
+        <a href="{% url 'kladez_app:completed_works' %}" style="padding: 0.5rem 1rem; background: #3498db; color: white; border-radius: 4px; text-decoration: none;">
+            Все работы →
+        </a>
+    </div>
+
     {% if recent_works %}
         <table>
             <thead>
@@ -34,6 +54,7 @@
                     <th>Автомобиль</th>
                     <th>Вид работ</th>
                     <th>Стоимость</th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody>
@@ -43,12 +64,45 @@
                     <td>{{ work.car_brand.name }} {{ work.car_model.name }}</td>
                     <td>{{ work.repair_type.name }}</td>
                     <td>{{ work.cost }} ₽</td>
+                    <td>
+                        <a href="{% url 'kladez_app:completed_work_detail' work.slug %}" style="color: #3498db; text-decoration: none;">Подробнее</a>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     {% else %}
         <p>Нет выполненных работ за последние 30 дней.</p>
+        <a href="{% url 'kladez_app:add_completed_work' %}" style="display: inline-block; margin-top: 1rem; padding: 0.5rem 1.5rem; background: #27ae60; color: white; border-radius: 4px; text-decoration: none;">
+            Добавить первую работу
+        </a>
     {% endif %}
+</div>
+
+<div class="card">
+    <h2>Быстрый доступ</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem; margin-top: 1rem;">
+        <a href="{% url 'kladez_app:add_completed_work' %}" style="background: #27ae60; color: white; padding: 1.5rem; border-radius: 8px; text-decoration: none; text-align: center;">
+            <div style="font-weight: bold; font-size: 1.2rem;">Добавить работу</div>
+            <div style="margin-top: 0.5rem; opacity: 0.9;">Новая выполненная работа</div>
+        </a>
+
+        <a href="{% url 'kladez_app:add_repair_type' %}" style="background: #e67e22; color: white; padding: 1.5rem; border-radius: 8px; text-decoration: none; text-align: center;">
+            <div style="font-weight: bold; font-size: 1.2rem;">Добавить вид работ</div>
+            <div style="margin-top: 0.5rem; opacity: 0.9;">Новый тип ремонта</div>
+        </a>
+
+        <a href="{% url 'kladez_app:car_models_directory' %}" style="background: #3498db; color: white; padding: 1.5rem; border-radius: 8px; text-decoration: none; text-align: center;">
+            <div style="font-weight: bold; font-size: 1.2rem;">Справочники</div>
+            <div style="margin-top: 0.5rem; opacity: 0.9;">Модели авто и виды работ</div>
+        </a>
+
+        {% if user.is_superuser %}
+        <a href="/admin/" style="background: #2c3e50; color: white; padding: 1.5rem; border-radius: 8px; text-decoration: none; text-align: center;">
+            <div style="font-weight: bold; font-size: 1.2rem;">Админка</div>
+            <div style="margin-top: 0.5rem; opacity: 0.9;">Управление системой</div>
+        </a>
+        {% endif %}
+    </div>
 </div>
 {% endblock %}

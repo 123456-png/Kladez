@@ -1,0 +1,49 @@
+{% extends "kladez_app/base.html" %}
+
+{% block content %}
+<div class="card">
+    <h2>Детали выполненной работы</h2>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
+        <div style="background: #f8f9fa; padding: 1rem; border-radius: 5px;">
+            <strong>Дата:</strong> {{ work.work_date|date:"d.m.Y" }}
+        </div>
+        
+        <div style="background: #f8f9fa; padding: 1rem; border-radius: 5px;">
+            <strong>Стоимость:</strong> {{ work.cost }} ₽
+        </div>
+        
+        <div style="background: #f8f9fa; padding: 1rem; border-radius: 5px;">
+            <strong>Марка:</strong> {{ work.car_brand.name }}
+        </div>
+        
+        <div style="background: #f8f9fa; padding: 1rem; border-radius: 5px;">
+            <strong>Модель:</strong> {{ work.car_model.name }}
+        </div>
+        
+        <div style="grid-column: span 2; background: #f8f9fa; padding: 1rem; border-radius: 5px;">
+            <strong>Вид работ:</strong> {{ work.repair_type.category.name }} - {{ work.repair_type.name }}
+        </div>
+        
+        {% if work.notes %}
+        <div style="grid-column: span 2; background: #e8f4fd; padding: 1rem; border-radius: 5px;">
+            <strong>Заметки:</strong><br>
+            {{ work.notes }}
+        </div>
+        {% endif %}
+        
+        {% if work.parts_used %}
+        <div style="grid-column: span 2; background: #e8f5e8; padding: 1rem; border-radius: 5px;">
+            <strong>Использованные запчасти:</strong><br>
+            {{ work.parts_used }}
+        </div>
+        {% endif %}
+    </div>
+    
+    <div style="margin-top: 1rem;">
+        <a href="{% url 'kladez_app:completed_works' %}" style="padding: 0.5rem 1rem; background: #7f8c8d; color: white; border-radius: 4px; text-decoration: none;">
+            Назад к списку работ
+        </a>
+    </div>
+</div>
+{% endblock %}

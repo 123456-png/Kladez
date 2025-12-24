@@ -1,0 +1,18 @@
+pyinstaller --onefile --console ^
+--name "Kladez" ^
+--add-data ".venv;.venv" ^
+--add-data "Kladez;Kladez" ^
+--hidden-import=django.core.management ^
+--hidden-import=django.db.backends.sqlite3 ^
+--hidden-import=django.db.backends ^
+--hidden-import=kladez_app.apps ^
+--hidden-import=kladez_app.models ^
+--hidden-import=kladez_app.views ^
+--hidden-import=kladez_app.admin ^
+--hidden-import=django.contrib.auth ^
+--hidden-import=django.contrib.contenttypes ^
+--hidden-import=django.contrib.sessions ^
+--hidden-import=django.contrib.messages ^
+--hidden-import=django.contrib.staticfiles ^
+--hidden-import=django.contrib.admin ^
+app.py
