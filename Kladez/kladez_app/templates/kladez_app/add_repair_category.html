@@ -30,11 +30,26 @@
                     {{ form.description.errors }}
                 </div>
                 {% endif %}
+            </div>
+
+            <div>
+                <label for="{{ form.color.id_for_label }}" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">
+                    Цвет категории
+                </label>
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    {{ form.color }}
+                    <div id="color-preview" style="width: 30px; height: 30px; border-radius: 4px; border: 1px solid #ddd;"></div>
+                </div>
+                {% if form.color.errors %}
+                <div style="color: #e74c3c; margin-top: 0.5rem;">
+                    {{ form.color.errors }}
+                </div>
+                {% endif %}
                 <small style="color: #7f8c8d; display: block; margin-top: 0.5rem;">
-                    Общее описание категории работ
+                    Выберите цвет для визуального выделения категории
                 </small>
             </div>
-            
+
             <div style="display: flex; gap: 1rem; margin-top: 1rem;">
                 <button type="submit" style="padding: 0.5rem 2rem; background: #e67e22; color: white; border: none; border-radius: 4px; cursor: pointer;">
                     Сохранить категорию
@@ -47,12 +62,29 @@
     </form>
 </div>
 
+<script>
+    // Предпросмотр цвета
+    document.getElementById('id_color').addEventListener('input', function() {
+        document.getElementById('color-preview').style.backgroundColor = this.value;
+    });
+
+    // Инициализация предпросмотра
+    document.addEventListener('DOMContentLoaded', function() {
+        const colorInput = document.getElementById('id_color');
+        if (colorInput.value) {
+            document.getElementById('color-preview').style.backgroundColor = colorInput.value;
+        } else {
+            document.getElementById('color-preview').style.backgroundColor = '#e67e22';
+        }
+    });
+</script>
+
 <div class="card" style="margin-top: 2rem;">
     <h3>Существующие категории работ</h3>
     {% if categories %}
         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 0.5rem; margin-top: 1rem;">
             {% for category in categories %}
-            <div style="background: #f8f9fa; padding: 0.5rem; border-radius: 4px; border-left: 3px solid #e67e22;">
+            <div style="background: #f8f9fa; padding: 0.5rem; border-radius: 4px; border-left: 4px solid {{ category.color }};">
                 <strong>{{ category.name }}</strong>
                 {% if category.description %}
                 <div style="font-size: 0.9rem; color: #7f8c8d; margin-top: 0.25rem;">

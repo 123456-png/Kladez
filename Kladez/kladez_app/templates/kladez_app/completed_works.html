@@ -2,80 +2,387 @@
 
 {% block content %}
 <div class="card">
-    <h2>Выполненные работы</h2>
-    
-    <!-- Простая форма фильтрации -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h2>Выполненные работы</h2>
+
+        <!-- Переключатель между таблицей и аналитикой -->
+        <div style="display: flex; background: #f8f9fa; padding: 0.25rem; border-radius: 4px;">
+            <a href="?tab=table{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}"
+               style="padding: 0.5rem 1rem; background: {% if not show_analytics %}#3498db{% else %}transparent{% endif %}; color: {% if not show_analytics %}white{% else %}#333{% endif %}; border-radius: 3px; text-decoration: none;">
+                📋 Таблица работ
+            </a>
+            <a href="?tab=analytics{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}"
+               style="padding: 0.5rem 1rem; background: {% if show_analytics %}#3498db{% else %}transparent{% endif %}; color: {% if show_analytics %}white{% else %}#333{% endif %}; border-radius: 3px; text-decoration: none;">
+                📊 Аналитика
+            </a>
+        </div>
+    </div>
+
+    <!-- Форма фильтрации -->
     <div style="background: #f8f9fa; padding: 1rem; border-radius: 5px; margin-bottom: 1rem;">
         <form method="get" style="display: flex; gap: 1rem; align-items: end;">
+            <input type="hidden" name="tab" value="{{ show_analytics|yesno:'analytics,table' }}">
+
             <div>
                 <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">С:</label>
-                <input type="date" name="date_from" value="{{ request.GET.date_from }}" style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+                <input type="date" name="date_from" value="{{ date_from }}" style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
             </div>
             <div>
                 <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">По:</label>
-                <input type="date" name="date_to" value="{{ request.GET.date_to }}" style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+                <input type="date" name="date_to" value="{{ date_to }}" style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
             </div>
             <div>
-                <button type="submit" style="padding: 0.5rem 1rem; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer;">Фильтровать</button>
-                <a href="{% url 'kladez_app:completed_works' %}" style="padding: 0.5rem 1rem; background: #95a5a6; color: white; border: none; border-radius: 4px; text-decoration: none; display: inline-block; margin-left: 0.5rem;">Сбросить</a>
+                <button type="submit" style="padding: 0.5rem 1rem; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    Применить
+                </button>
+                <a href="?tab={{ show_analytics|yesno:'analytics,table' }}" style="padding: 0.5rem 1rem; background: #95a5a6; color: white; border: none; border-radius: 4px; text-decoration: none; display: inline-block; margin-left: 0.5rem;">
+                    Сбросить
+                </a>
             </div>
         </form>
     </div>
 
-    <!-- Статистика -->
-    <div style="display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
-        <div style="background: #e8f5e8; padding: 0.5rem 1rem; border-radius: 4px;">
-            <strong>Всего работ:</strong> {{ total_count }}
-        </div>
-        <div style="background: #e8f4fd; padding: 0.5rem 1rem; border-radius: 4px;">
-            <strong>Общая стоимость:</strong> {{ total_cost }} ₽
+    {% if not show_analytics %}
+        <!-- РЕЖИМ ТАБЛИЦЫ РАБОТ -->
+        {% include 'kladez_app/works_table.html' %}
+    {% else %}
+        <!-- РЕЖИМ АНАЛИТИКИ -->
+        <div id="analytics-content">
+
+            <!-- Общая статистика -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+                <div style="background: #e8f5e8; padding: 1.5rem; border-radius: 8px; text-align: center;">
+                    <div style="font-size: 2rem; font-weight: bold; color: #27ae60;">
+                        {{ analytics_data.total_works }}
+                    </div>
+                    <div style="color: #7f8c8d; margin-top: 0.5rem;">
+                        Всего работ
+                    </div>
+                </div>
+
+                <div style="background: #e8f4fd; padding: 1.5rem; border-radius: 8px; text-align: center;">
+                    <div style="font-size: 2rem; font-weight: bold; color: #3498db;">
+                        {{ analytics_data.total_revenue|floatformat:0 }}
+                    </div>
+                    <div style="color: #7f8c8d; margin-top: 0.5rem;">
+                        Общая выручка (₽)
+                    </div>
+                </div>
+
+                <div style="background: #fff3cd; padding: 1.5rem; border-radius: 8px; text-align: center;">
+                    <div style="font-size: 2rem; font-weight: bold; color: #e67e22;">
+                        {{ analytics_data.avg_revenue_per_work|floatformat:0 }}
+                    </div>
+                    <div style="color: #7f8c8d; margin-top: 0.5rem;">
+                        Средний чек (₽)
+                    </div>
+                </div>
+
+                <div style="background: #f8d7da; padding: 1.5rem; border-radius: 8px; text-align: center;">
+                    <div style="font-size: 2rem; font-weight: bold; color: #e74c3c;">
+                        {{ analytics_data.by_category_count|length }}
+                    </div>
+                    <div style="color: #7f8c8d; margin-top: 0.5rem;">
+                        Категорий работ
+                    </div>
+                </div>
+            </div>
+
+            {% if analytics_data.table_data %}
+                <!-- Переключатель типа диаграммы -->
+                <div style="display: flex; justify-content: center; margin-bottom: 2rem;">
+                    <div style="display: flex; background: #f8f9fa; padding: 0.25rem; border-radius: 4px;">
+                        <button type="button" onclick="switchChart('count')" id="btn-count" style="padding: 0.5rem 1rem; background: #27ae60; color: white; border: none; border-radius: 3px; cursor: pointer;">
+                            По количеству работ
+                        </button>
+                        <button type="button" onclick="switchChart('revenue')" id="btn-revenue" style="padding: 0.5rem 1rem; background: transparent; color: #333; border: none; border-radius: 3px; cursor: pointer;">
+                            По выручке
+                        </button>
+                        <button type="button" onclick="switchChart('average')" id="btn-average" style="padding: 0.5rem 1rem; background: transparent; color: #333; border: none; border-radius: 3px; cursor: pointer;">
+                            По среднему чеку
+                        </button>
+                    </div>
+                </div>
+
+                <div style="display: flex; flex-wrap: wrap; gap: 2rem; margin-bottom: 2rem; align-items: flex-start;"> <!-- Изменено align-items -->
+    <div style="flex: 1; min-width: 300px;">
+        <div style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <h3 style="margin-bottom: 1rem; text-align: center;" id="chart-title">
+                Распределение по количеству работ
+            </h3>
+            <div style="position: relative; height: 300px;"> <!-- Добавлен контейнер для диаграммы -->
+                <canvas id="pieChart"></canvas>
+            </div>
         </div>
     </div>
 
-    <!-- Таблица работ -->
-    {% if works %}
-        <table>
-            <thead>
-                <tr>
-                    <th>Дата</th>
-                    <th>Марка</th>
-                    <th>Модель</th>
-                    <th>Вид работ</th>
-                    <th>Стоимость</th>
-                    <th>Заметки</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for work in works %}
-                <tr>
-                    <td>{{ work.work_date|date:"d.m.Y" }}</td>
-                    <td>{{ work.car_brand.name }}</td>
-                    <td>{{ work.car_model.name }}</td>
-                    <td>
-                        <strong>{{ work.repair_type.category.name }}</strong><br>
-                        {{ work.repair_type.name }}
-                    </td>
-                    <td style="font-weight: bold; color: #27ae60;">{{ work.cost }} ₽</td>
-                    <td>
-                        {% if work.notes %}
-                            <span title="{{ work.notes }}">📝</span>
-                        {% endif %}
-                        {% if work.parts_used %}
-                            <span title="Запчасти: {{ work.parts_used }}">🔧</span>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <p style="text-align: center; padding: 2rem; color: #7f8c8d;">
-            {% if request.GET.date_from or request.GET.date_to %}
-                Нет работ за выбранный период
+    <div style="flex: 1; min-width: 300px;">
+        <div style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <h3 style="margin-bottom: 1rem; text-align: center;" id="detail-title">
+                Детализация категории
+            </h3>
+            <div id="category-details" style="min-height: 300px; color: #7f8c8d; padding: 1rem;"> <!-- Убрал flex центрирование -->
+                <div style="display: flex; align-items: center; justify-content: center; height: 100%;">
+                    Наведите на сектор диаграммы для детализации
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+                <!-- Дополнительная информация -->
+                <div style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                    <h3 style="margin-bottom: 1rem;">Подробная статистика по категориям</h3>
+
+                    <div style="overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr>
+                                    <th style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd;">Категория</th>
+                                    <th style="padding: 12px; text-align: right; border-bottom: 1px solid #ddd;">Кол-во работ</th>
+                                    <th style="padding: 12px; text-align: right; border-bottom: 1px solid #ddd;">Выручка (₽)</th>
+                                    <th style="padding: 12px; text-align: right; border-bottom: 1px solid #ddd;">Средний чек (₽)</th>
+                                    <th style="padding: 12px; text-align: right; border-bottom: 1px solid #ddd;">Доля в выручке</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in analytics_data.table_data %}
+                                <tr style="cursor: pointer;" onclick="showCategoryDetails('{{ item.name }}')">
+                                    <td style="padding: 12px; border-bottom: 1px solid #eee;">
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                            <div style="width: 12px; height: 12px; border-radius: 50%; background: {{ item.color }};"></div>
+                                            {{ item.name }}
+                                        </div>
+                                    </td>
+                                    <td style="padding: 12px; text-align: right; border-bottom: 1px solid #eee;">
+                                        {{ item.count }}
+                                    </td>
+                                    <td style="padding: 12px; text-align: right; border-bottom: 1px solid #eee;">
+                                        {{ item.revenue|floatformat:0 }}
+                                    </td>
+                                    <td style="padding: 12px; text-align: right; border-bottom: 1px solid #eee;">
+                                        {{ item.avg|floatformat:0 }}
+                                    </td>
+                                    <td style="padding: 12px; text-align: right; border-bottom: 1px solid #eee;">
+                                        {{ item.share|floatformat:1 }}%
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             {% else %}
-                Ещё нет выполненных работ
+                <div style="text-align: center; padding: 3rem; color: #7f8c8d;">
+                    <h3 style="color: #95a5a6;">Нет данных для аналитики</h3>
+                    <p style="margin-top: 1rem;">Выполните работы в выбранном периоде, чтобы увидеть аналитику</p>
+                    <a href="?tab=table" style="display: inline-block; margin-top: 1rem; padding: 0.5rem 1.5rem; background: #3498db; color: white; border-radius: 4px; text-decoration: none;">
+                        Перейти к таблице работ
+                    </a>
+                </div>
             {% endif %}
-        </p>
+        </div>
     {% endif %}
 </div>
+
+<!-- Подключаем Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    // Данные для диаграмм
+    const analyticsData = {{ analytics_data_json|safe }};
+
+    console.log("Analytics data:", analyticsData); // Для отладки
+
+    let currentChartType = 'count';
+    let pieChart = null;
+
+    // Инициализация диаграммы
+    function initChart(chartType = 'count') {
+        currentChartType = chartType;
+
+        // Обновляем активную кнопку
+        ['count', 'revenue', 'average'].forEach(type => {
+            const btn = document.getElementById(`btn-${type}`);
+            if (btn) {
+                btn.style.background = type === chartType ?
+                    (type === 'count' ? '#27ae60' : type === 'revenue' ? '#3498db' : '#e67e22') :
+                    'transparent';
+                btn.style.color = type === chartType ? 'white' : '#333';
+            }
+        });
+
+        // Обновляем заголовок
+        const titles = {
+            'count': 'Распределение по количеству работ',
+            'revenue': 'Распределение по выручке',
+            'average': 'Распределение по среднему чеку'
+        };
+        if (document.getElementById('chart-title')) {
+            document.getElementById('chart-title').textContent = titles[chartType];
+        }
+
+        // Подготавливаем данные
+        let data = [];
+        let labels = [];
+        let colors = [];
+        let tooltipData = [];
+
+        if (chartType === 'count') {
+            data = analyticsData.by_category_count.map(item => item.value);
+            labels = analyticsData.by_category_count.map(item => item.name);
+            colors = analyticsData.by_category_count.map(item => item.color);
+            tooltipData = analyticsData.by_category_count;
+        } else if (chartType === 'revenue') {
+            data = analyticsData.by_category_revenue.map(item => item.value);
+            labels = analyticsData.by_category_revenue.map(item => item.name);
+            colors = analyticsData.by_category_revenue.map(item => item.color);
+            tooltipData = analyticsData.by_category_revenue;
+        } else if (chartType === 'average') {
+            data = analyticsData.by_category_avg.map(item => item.value);
+            labels = analyticsData.by_category_avg.map(item => item.name);
+            colors = analyticsData.by_category_avg.map(item => item.color);
+            tooltipData = analyticsData.by_category_avg;
+        }
+
+        // Уничтожаем старую диаграмму, если существует
+        if (pieChart) {
+            pieChart.destroy();
+        }
+
+        // Создаем новую диаграмму
+        const ctx = document.getElementById('pieChart');
+        if (!ctx) return;
+
+        pieChart = new Chart(ctx.getContext('2d'), {
+            type: 'pie',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    backgroundColor: colors,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 20,
+                            usePointStyle: true,
+                            pointStyle: 'circle'
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                let total = 0;
+
+                                if (chartType === 'count') {
+                                    total = analyticsData.total_works;
+                                    return total > 0 ? `${label}: ${value} работ (${((value/total)*100).toFixed(1)}%)` : `${label}: ${value} работ`;
+                                } else if (chartType === 'revenue') {
+                                    total = analyticsData.total_revenue;
+                                    return total > 0 ? `${label}: ${value.toFixed(0)} ₽ (${((value/total)*100).toFixed(1)}%)` : `${label}: ${value.toFixed(0)} ₽`;
+                                } else {
+                                    return `${label}: ${value.toFixed(0)} ₽ в среднем`;
+                                }
+                            }
+                        }
+                    }
+                },
+                onClick: function(evt, elements) {
+                    if (elements.length > 0) {
+                        const index = elements[0].index;
+                        showCategoryDetails(labels[index]);
+                    }
+                },
+                onHover: function(evt, elements) {
+                    if (elements.length > 0) {
+                        const index = elements[0].index;
+                        showCategoryDetails(labels[index], true);
+                    }
+                }
+            }
+        });
+    }
+
+    // Переключение типа диаграммы
+    function switchChart(chartType) {
+        initChart(chartType);
+    }
+
+    // Показать детализацию по категории
+    function showCategoryDetails(categoryName, isHover = false) {
+        if (!categoryName) return;
+
+        let categoryData = null;
+
+        // Ищем данные категории в by_category_count (там есть repair_types)
+        categoryData = analyticsData.by_category_count.find(item => item.name === categoryName);
+
+        if (!categoryData) return;
+
+        // Обновляем заголовок
+        if (document.getElementById('detail-title')) {
+            document.getElementById('detail-title').textContent = categoryName;
+        }
+
+        // Создаем детализацию
+        let detailsHtml = '';
+
+        if (categoryData.repair_types && categoryData.repair_types.length > 0) {
+            detailsHtml = `
+                <div style="width: 100%;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; padding-bottom: 0.5rem; border-bottom: 1px solid #eee;">
+                        <span style="font-weight: bold;">Вид работ</span>
+                        <span style="font-weight: bold;">Количество</span>
+                        <span style="font-weight: bold;">Выручка</span>
+                    </div>
+            `;
+
+            categoryData.repair_types.forEach(repair => {
+                detailsHtml += `
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem; padding: 0.25rem 0;">
+                        <span>${repair.name}</span>
+                        <span>${repair.count}</span>
+                        <span>${parseFloat(repair.revenue).toFixed(0)} ₽</span>
+                    </div>
+                `;
+            });
+
+            detailsHtml += '</div>';
+        } else {
+            detailsHtml = `
+                <div style="text-align: center; color: #7f8c8d;">
+                    <p>Нет детализации по видам работ в этой категории</p>
+                </div>
+            `;
+        }
+
+        if (document.getElementById('category-details')) {
+            document.getElementById('category-details').innerHTML = detailsHtml;
+        }
+
+        // Если это не ховер, скроллим к детализации
+        if (!isHover) {
+            const detailsElement = document.getElementById('category-details');
+            if (detailsElement) {
+                detailsElement.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+    }
+
+    // Инициализируем диаграмму при загрузке
+    document.addEventListener('DOMContentLoaded', function() {
+        if ({{ show_analytics|yesno:"true,false" }} && analyticsData.table_data && analyticsData.table_data.length > 0) {
+            initChart('count');
+        }
+    });
+</script>
 {% endblock %}

@@ -3,15 +3,24 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.views import LoginView
-from django.views.generic import CreateView
+from django.views.generic import CreateView, TemplateView
 from django.urls import reverse_lazy
 from django.db.models import Count, Sum
 from datetime import datetime, timedelta
 from django.contrib import messages
 from .models import CompletedWork, CarBrand, CarModel, RepairType, RepairCategory
 from .forms import CompletedWorkForm, CarBrandForm, CarModelForm, RepairCategoryForm, RepairTypeForm, LoginForm, \
-    RegisterForm
+    RegisterForm, DecimalEncoder
+import json
 
+
+class ExportImportView(TemplateView):
+    template_name = 'kladez_app/export_import.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Экспорт и импорт данных'
+        return context
 
 # Декоратор для проверки суперпользователя
 def superuser_required(view_func):
@@ -22,11 +31,12 @@ def superuser_required(view_func):
     return decorated_view_func
 
 
+# В views.py, в функции home, исправляем подсчет видов работ
 @login_required
 def home(request):
     """Главная страница с общей информацией"""
     last_30_days = datetime.now() - timedelta(days=30)
-    last_30_days_date = last_30_days.date()  # Для передачи в ссылку
+    last_30_days_date = last_30_days.date()
 
     recent_works = CompletedWork.objects.filter(user=request.user, work_date__gte=last_30_days)
     total_recent_works = recent_works.count()
@@ -39,33 +49,140 @@ def home(request):
         'total_recent_works': total_recent_works,
         'total_revenue': total_revenue,
         'recent_works': recent_works.order_by('-work_date')[:10],
-        'last_30_days_date': last_30_days_date,  # Передаем дату для фильтра
+        'last_30_days_date': last_30_days_date,
     }
     return render(request, 'kladez_app/home.html', context)
 
 
 @login_required
 def completed_works(request):
-    """Список всех выполненных работ"""
+    """Список всех выполненных работ с аналитикой"""
     works = CompletedWork.objects.filter(user=request.user).select_related(
-        'car_brand', 'car_model', 'repair_type'
-    ).order_by('-work_date')
+        'car_brand', 'car_model'
+    ).prefetch_related('repair_types__category').order_by('-work_date')
 
     date_from = request.GET.get('date_from')
     date_to = request.GET.get('date_to')
+    show_analytics = request.GET.get('tab') == 'analytics'
 
     if date_from:
         works = works.filter(work_date__gte=date_from)
     if date_to:
         works = works.filter(work_date__lte=date_to)
 
+    # Данные для аналитики
+    analytics_data = {
+        'by_category_count': [],
+        'by_category_revenue': [],
+        'by_category_avg': [],
+        'table_data': [],
+        'total_works': 0,
+        'total_revenue': 0,
+        'avg_revenue_per_work': 0,
+    }
+
+    # Если включена аналитика
+    if show_analytics:
+        # Собираем статистику по категориям
+        category_stats = {}
+
+        for work in works:
+            analytics_data['total_works'] += 1
+            analytics_data['total_revenue'] += float(work.cost)
+
+            for repair in work.repair_types.all():
+                category = repair.category
+                if category.id not in category_stats:
+                    category_stats[category.id] = {
+                        'category': category,
+                        'count': 0,
+                        'revenue': 0,
+                        'repair_types': {}
+                    }
+
+                category_stats[category.id]['count'] += 1
+                category_stats[category.id]['revenue'] += float(work.cost)
+
+                # Статистика по видам работ внутри категории
+                if repair.id not in category_stats[category.id]['repair_types']:
+                    category_stats[category.id]['repair_types'][repair.id] = {
+                        'name': repair.name,
+                        'count': 0,
+                        'revenue': 0
+                    }
+
+                category_stats[category.id]['repair_types'][repair.id]['count'] += 1
+                category_stats[category.id]['repair_types'][repair.id]['revenue'] += float(work.cost)
+
+        # Преобразуем данные для таблицы и диаграмм
+        for cat_id, stats in category_stats.items():
+            category = stats['category']
+            count = stats['count']
+            revenue = stats['revenue']
+            avg = revenue / count if count > 0 else 0
+
+            # Данные для таблицы
+            table_item = {
+                'name': category.name,
+                'color': category.color,
+                'count': count,
+                'revenue': revenue,
+                'avg': avg,
+                'share': (revenue / analytics_data['total_revenue'] * 100) if analytics_data[
+                                                                                  'total_revenue'] > 0 else 0,
+                'repair_types': list(stats['repair_types'].values())
+            }
+            analytics_data['table_data'].append(table_item)
+
+            # Для диаграммы по количеству работ
+            analytics_data['by_category_count'].append({
+                'name': category.name,
+                'color': category.color,
+                'value': count,
+                'repair_types': list(stats['repair_types'].values())
+            })
+
+            # Для диаграммы по выручке
+            analytics_data['by_category_revenue'].append({
+                'name': category.name,
+                'color': category.color,
+                'value': revenue,
+                'repair_types': list(stats['repair_types'].values())
+            })
+
+            # Для диаграммы по среднему чеку
+            analytics_data['by_category_avg'].append({
+                'name': category.name,
+                'color': category.color,
+                'value': avg,
+                'repair_types': list(stats['repair_types'].values())
+            })
+
+        # Сортируем по убыванию
+        analytics_data['table_data'].sort(key=lambda x: x['revenue'], reverse=True)
+        analytics_data['by_category_count'].sort(key=lambda x: x['value'], reverse=True)
+        analytics_data['by_category_revenue'].sort(key=lambda x: x['value'], reverse=True)
+        analytics_data['by_category_avg'].sort(key=lambda x: x['value'], reverse=True)
+
+        # Рассчитываем среднюю выручку на работу
+        if analytics_data['total_works'] > 0:
+            analytics_data['avg_revenue_per_work'] = analytics_data['total_revenue'] / analytics_data['total_works']
+
+    # Преобразуем в JSON для передачи в шаблон
+    analytics_data_json = json.dumps(analytics_data, cls=DecimalEncoder)
+
     context = {
         'works': works,
         'total_count': works.count(),
-        'total_cost': works.aggregate(Sum('cost'))['cost__sum'] or 0
+        'total_cost': works.aggregate(Sum('cost'))['cost__sum'] or 0,
+        'analytics_data': analytics_data,
+        'analytics_data_json': analytics_data_json,
+        'show_analytics': show_analytics,
+        'date_from': date_from,
+        'date_to': date_to,
     }
-    return render(request, 'kladez_app/completed_works.html', context)
 
+    return render(request, 'kladez_app/completed_works.html', context)
 
 @login_required
 def car_models_directory(request):
@@ -100,12 +217,11 @@ def add_completed_work(request):
         if form.is_valid():
             form.save()
             messages.success(request, 'Работа успешно добавлена!')
-            return redirect('kladez_app:add_completed_work')  # Остаемся на той же странице
+            return redirect('kladez_app:add_completed_work')
     else:
         form = CompletedWorkForm(user=request.user)
 
     return render(request, 'kladez_app/add_completed_work.html', {'form': form})
-
 
 def completed_work_detail(request, slug):
     """Детальная страница выполненной работы"""
@@ -231,3 +347,45 @@ class LoginUser(LoginView):
 
     def get_success_url(self):
         return reverse_lazy('kladez_app:home')
+
+
+@login_required
+def delete_completed_work(request, slug):
+    """Удаление выполненной работы"""
+    work = get_object_or_404(CompletedWork, slug=slug, user=request.user)
+
+    if request.method == 'POST':
+        work.delete()
+        messages.success(request, 'Работа успешно удалена!')
+        return redirect('kladez_app:completed_works')  # Перенаправляем на список работ
+
+    # Если запрос GET (просто перешли по ссылке), спрашиваем подтверждение
+    return render(request, 'kladez_app/confirm_delete.html', {
+        'object': work,
+        'object_name': 'выполненную работу',
+        'cancel_url': reverse_lazy('kladez_app:completed_works')
+    })
+
+@login_required
+def delete_repair_type(request, pk):
+    """Удаление вида работ"""
+    repair_type = get_object_or_404(RepairType, pk=pk, user=request.user)
+
+    if request.method == 'POST':
+        # Проверяем, используется ли этот вид работ в каких-либо работах
+        used_in_works = CompletedWork.objects.filter(repair_types=repair_type).exists()
+
+        if used_in_works:
+            messages.error(request, 'Невозможно удалить вид работ, так как он используется в выполненных работах!')
+            return redirect('kladez_app:repair_types_directory')
+
+        repair_type.delete()
+        messages.success(request, 'Вид работ успешно удален!')
+        return redirect('kladez_app:repair_types_directory')
+
+    # Если запрос не POST, показываем страницу подтверждения
+    return render(request, 'kladez_app/confirm_delete.html', {
+        'object': repair_type,
+        'object_name': 'вид работ',
+        'cancel_url': reverse_lazy('kladez_app:repair_types_directory')
+    })

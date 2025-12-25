@@ -1,5 +1,6 @@
-{% extends "kladez_app/base.html" %}
 
+{% extends "kladez_app/base.html" %}
+{% load custom_filters %}
 {% block content %}
 <div class="card">
     <h2>Добавить выполненную работу</h2>
@@ -8,7 +9,6 @@
         {% csrf_token %}
         
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-            <!-- Поля формы остаются без изменений -->
             <div>
                 <label for="{{ form.work_date.id_for_label }}">{{ form.work_date.label }}</label>
                 {{ form.work_date }}
@@ -31,15 +31,46 @@
                 <label for="{{ form.car_model.id_for_label }}">{{ form.car_model.label }}</label>
                 <select name="car_model" id="id_car_model" required>
                     <option value="">---------</option>
-                    <!-- Модели будут загружены через AJAX -->
                 </select>
                 {{ form.car_model.errors }}
             </div>
 
+            <!-- Виды работ с группировкой -->
             <div style="grid-column: span 2;">
-                <label for="{{ form.repair_type.id_for_label }}">{{ form.repair_type.label }}</label>
-                {{ form.repair_type }}
-                {{ form.repair_type.errors }}
+                <label for="{{ form.repair_types.id_for_label }}" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">
+                    {{ form.repair_types.label }}
+                </label>
+                <div style="max-height: 300px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 1rem; background: #f8f9fa;">
+                    {% regroup form.repair_types.field.queryset by category as categories_list %}
+
+                    {% for category in categories_list %}
+                        <div style="margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid {{ category.grouper.color }};">
+                            <div style="font-weight: bold; margin-bottom: 0.5rem; padding: 0.25rem 0.5rem; background: {{ category.grouper.color }}; color: white; border-radius: 3px; display: inline-block;">
+                                {{ category.grouper.name }}
+                            </div>
+                            <div style="margin-left: 1rem; margin-top: 0.5rem;">
+                                {% for repair in category.list %}
+                                <div style="margin-bottom: 0.25rem;">
+                                    <input type="checkbox" name="repair_types" value="{{ repair.id }}" id="id_repair_types_{{ repair.id }}"
+                                           {% if repair.id in form.repair_types.value %}checked{% endif %}>
+                                    <label for="id_repair_types_{{ repair.id }}" style="cursor: pointer;">
+                                        {{ repair.name }}
+                                        {% if repair.complexity %}
+                                        <small style="color: #7f8c8d;">({{ repair.complexity }})</small>
+                                        {% endif %}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% empty %}
+                        <p style="color: #7f8c8d; text-align: center;">Нет доступных видов работ</p>
+                    {% endfor %}
+                </div>
+                {{ form.repair_types.errors }}
+                <small style="color: #7f8c8d; display: block; margin-top: 0.5rem;">
+                    Можно выбрать несколько видов работ
+                </small>
             </div>
 
             <div style="grid-column: span 2;">
@@ -69,8 +100,8 @@
     </form>
 </div>
 
-<!-- JavaScript остается без изменений -->
 <script>
+    // AJAX для загрузки моделей
     document.getElementById('id_car_brand').addEventListener('change', function() {
         const brandId = this.value;
         const carModelSelect = document.getElementById('id_car_model');
@@ -92,6 +123,7 @@
         }
     });
 
+    // Автоматическая загрузка моделей при наличии выбранной марки
     window.addEventListener('DOMContentLoaded', function() {
         const selectedBrand = document.getElementById('id_car_brand').value;
         if (selectedBrand) {
@@ -100,24 +132,25 @@
     });
 </script>
 
-<!-- Быстрые ссылки -->
 <div class="card" style="margin-top: 2rem;">
     <h3>Быстрые ссылки</h3>
     <div style="display: flex; gap: 1rem; margin-top: 1rem; flex-wrap: wrap;">
         {% if user.is_superuser %}
             <a href="{% url 'kladez_app:add_car_brand' %}" style="padding: 0.5rem 1rem; background: #3498db; color: white; border-radius: 4px; text-decoration: none;">
-                Добавить новую марку
+                Добавить марку
             </a>
-            <a href="{% url 'kladez_app:add_repair_type' %}" style="padding: 0.5rem 1rem; background: #e67e22; color: white; border-radius: 4px; text-decoration: none;">
-                Добавить вид работ
+            <a href="{% url 'kladez_app:add_car_model' %}" style="padding: 0.5rem 1rem; background: #3498db; color: white; border-radius: 4px; text-decoration: none;">
+                Добавить модель
             </a>
         {% endif %}
-        <a href="{% url 'kladez_app:car_models_directory' %}" style="padding: 0.5rem 1rem; background: #2c3e50; color: white; border-radius: 4px; text-decoration: none;">
-            Справочник моделей
+        <a href="{% url 'kladez_app:add_repair_type' %}" style="padding: 0.5rem 1rem; background: #e67e22; color: white; border-radius: 4px; text-decoration: none;">
+            Добавить вид работ
         </a>
-        <a href="{% url 'kladez_app:repair_types_directory' %}" style="padding: 0.5rem 1rem; background: #e74c3c; color: white; border-radius: 4px; text-decoration: none;">
-            Справочник видов работ
-        </a>
+        {% if user.is_superuser %}
+            <a href="{% url 'kladez_app:add_repair_category' %}" style="padding: 0.5rem 1rem; background: #e74c3c; color: white; border-radius: 4px; text-decoration: none;">
+                Добавить категорию
+            </a>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

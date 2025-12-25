@@ -15,6 +15,7 @@ class CarBrand(models.Model):
     def __str__(self):
         return self.name
 
+
 class CarModel(models.Model):
     brand = models.ForeignKey(CarBrand, on_delete=models.CASCADE, verbose_name="Марка")
     name = models.CharField(max_length=100, verbose_name="Модель")
@@ -33,6 +34,7 @@ class CarModel(models.Model):
 class RepairCategory(models.Model):
     name = models.CharField(max_length=100, verbose_name="Категория работ")
     description = models.TextField(blank=True, verbose_name="Описание категории")
+    color = models.CharField(max_length=20, default="#e67e22", verbose_name="Цвет категории")  # Новое поле для цвета
 
     class Meta:
         verbose_name = "Категория работ"
@@ -48,7 +50,7 @@ class RepairType(models.Model):
     description = models.TextField(blank=True, verbose_name="Описание работ")
     typical_duration = models.CharField(max_length=50, blank=True, verbose_name="Типовая длительность")
     complexity = models.CharField(max_length=50, blank=True, verbose_name="Сложность")
-    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Пользователь", null=True, blank=True)  # Новая связь с пользователем
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Пользователь", null=True, blank=True)
 
     class Meta:
         verbose_name = "Вид работ"
@@ -62,7 +64,7 @@ class CompletedWork(models.Model):
     work_date = models.DateField(default=timezone.now, verbose_name="Дата выполнения")
     car_brand = models.ForeignKey(CarBrand, on_delete=models.CASCADE, verbose_name="Марка")
     car_model = models.ForeignKey(CarModel, on_delete=models.CASCADE, verbose_name="Модель")
-    repair_type = models.ForeignKey(RepairType, on_delete=models.CASCADE, verbose_name="Вид работ")
+    repair_types = models.ManyToManyField(RepairType, verbose_name="Виды работ")  # Изменено на ManyToMany
     cost = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Стоимость работы")
     notes = models.TextField(blank=True, verbose_name="Заметки")
     parts_used = models.TextField(blank=True, verbose_name="Использованные запчасти")
@@ -72,11 +74,9 @@ class CompletedWork(models.Model):
     def save(self, *args, **kwargs):
         """Автоматически создаём slug при сохранении"""
         if not self.slug or self.slug == "":
-            # Создаём slug из марки, модели и даты
             base_slug = slugify(f"{self.car_brand.name} {self.car_model.name} {self.work_date}")
             self.slug = base_slug
 
-            # Проверяем уникальность
             counter = 1
             while CompletedWork.objects.filter(slug=self.slug).exists():
                 self.slug = f"{base_slug}-{counter}"
@@ -87,7 +87,7 @@ class CompletedWork(models.Model):
     def get_absolute_url(self):
         """URL для детального просмотра работы"""
         from django.urls import reverse
-        return reverse('completed_work_detail', kwargs={'slug': self.slug})
+        return reverse('kladez_app:completed_work_detail', kwargs={'slug': self.slug})
 
     class Meta:
         verbose_name = "Выполненная работа"
@@ -95,4 +95,5 @@ class CompletedWork(models.Model):
         ordering = ['-work_date']
 
     def __str__(self):
-        return f"{self.work_date} - {self.car_brand} {self.car_model} - {self.repair_type}"
+        repair_types_names = ", ".join([rt.name for rt in self.repair_types.all()[:3]])
+        return f"{self.work_date} - {self.car_brand} {self.car_model} - {repair_types_names}"

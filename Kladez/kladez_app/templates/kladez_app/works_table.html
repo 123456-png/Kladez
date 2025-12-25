@@ -1,0 +1,86 @@
+<div style="display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
+    <div style="background: #e8f5e8; padding: 0.5rem 1rem; border-radius: 4px;">
+        <strong>Всего работ:</strong> {{ total_count }}
+    </div>
+    <div style="background: #e8f4fd; padding: 0.5rem 1rem; border-radius: 4px;">
+        <strong>Общая стоимость:</strong> {{ total_cost }} ₽
+    </div>
+</div>
+
+<!-- Таблица работ -->
+{% if works %}
+    <div style="overflow-x: auto;">
+        <table>
+            <thead>
+                <tr>
+                    <th>Дата</th>
+                    <th>Марка</th>
+                    <th>Модель</th>
+                    <th>Виды работ</th>
+                    <th>Стоимость</th>
+                    <th>Заметки</th>
+                    <th style="width: 150px;">Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for work in works %}
+                <tr>
+                    <td>{{ work.work_date|date:"d.m.Y" }}</td>
+                    <td>{{ work.car_brand.name }}</td>
+                    <td>{{ work.car_model.name }}</td>
+                    <td>
+                        <div style="display: flex; flex-wrap: wrap; gap: 0.25rem;">
+                            {% for repair in work.repair_types.all %}
+                            <span style="background: {{ repair.category.color }}; color: white; padding: 0.1rem 0.3rem; border-radius: 3px; font-size: 0.8rem;">
+                                {{ repair.name }}
+                            </span>
+                            {% endfor %}
+                        </div>
+                    </td>
+                    <td style="font-weight: bold; color: #27ae60;">{{ work.cost }} ₽</td>
+                    <td>
+                        {% if work.notes %}
+                            <span title="{{ work.notes }}" style="cursor: help;">📝</span>
+                        {% endif %}
+                        {% if work.parts_used %}
+                            <span title="Запчасти: {{ work.parts_used }}" style="cursor: help; margin-left: 0.5rem;">🔧</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <a href="{% url 'kladez_app:completed_work_detail' work.slug %}"
+                               style="color: #3498db; text-decoration: none; font-size: 0.9rem; padding: 0.25rem 0.5rem; border: 1px solid #3498db; border-radius: 3px;">
+                                Подробнее
+                            </a>
+                            <!-- Заменяем ссылку на форму для удаления -->
+                            <form method="post" action="{% url 'kladez_app:delete_completed_work' work.slug %}"
+                                  style="margin: 0; display: inline;"
+                                  onsubmit="return confirm('Вы уверены, что хотите удалить эту работу?');">
+                                {% csrf_token %}
+                                <button type="submit"
+                                        style="color: #e74c3c; background: none; border: 1px solid #e74c3c; border-radius: 3px; padding: 0.25rem 0.5rem; font-size: 0.9rem; cursor: pointer;">
+                                    Удалить
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <p style="text-align: center; padding: 2rem; color: #7f8c8d;">
+        {% if date_from or date_to %}
+            Нет работ за выбранный период
+        {% else %}
+            Ещё нет выполненных работ
+        {% endif %}
+    </p>
+{% endif %}
+
+<div style="margin-top: 1rem; text-align: center;">
+    <a href="{% url 'kladez_app:add_completed_work' %}" style="padding: 0.5rem 1.5rem; background: #27ae60; color: white; border-radius: 4px; text-decoration: none; display: inline-block;">
+        ➕ Добавить новую работу
+    </a>
+</div>

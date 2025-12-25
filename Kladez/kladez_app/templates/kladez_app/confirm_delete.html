@@ -1,0 +1,35 @@
+{% extends "kladez_app/base.html" %}
+
+{% block content %}
+<div class="card">
+    <div style="text-align: center; padding: 2rem;">
+
+        <h2>Подтверждение удаления</h2>
+        
+        <p style="margin: 1rem 0; font-size: 1.1rem;">
+            Вы действительно хотите удалить <strong>"{{ object.name }}"</strong>?
+        </p>
+        
+        {% if object_name %}
+        <p style="color: #e74c3c; margin-bottom: 2rem;">
+            Это действие нельзя будет отменить!
+        </p>
+        {% endif %}
+        
+        <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 2rem;">
+            <form method="post" style="margin: 0;">
+                {% csrf_token %}
+                <button type="submit" 
+                        style="padding: 0.75rem 2rem; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+                    Да, удалить
+                </button>
+            </form>
+            
+            <a href="{{ cancel_url }}" 
+               style="padding: 0.75rem 2rem; background: #95a5a6; color: white; border-radius: 4px; text-decoration: none; font-weight: bold;">
+                Отмена
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -2,57 +2,72 @@
 
 {% block content %}
 <div class="card">
-    <h2>Справочник видов работ</h2>
-    
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h2>Виды работ</h2>
+        <a href="{% url 'kladez_app:add_repair_type' %}"
+           style="padding: 0.5rem 1rem; background: #27ae60; color: white; border-radius: 4px; text-decoration: none;">
+            + Добавить вид работ
+        </a>
+    </div>
+
     {% if categories_with_repairs %}
         {% for category in categories_with_repairs %}
             {% if category.user_repair_types %}
-            <div style="margin-bottom: 2rem; border-left: 4px solid #e74c3c; padding-left: 1rem;">
-                <h3 style="color: #2c3e50; margin-bottom: 1rem;">
-                    {{ category.name }}
-                    {% if category.description %}
-                        <small style="color: #7f8c8d; font-weight: normal;">- {{ category.description }}</small>
-                    {% endif %}
-                </h3>
+            <div style="margin-bottom: 2rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid {{ category.color }};">
+                    <div style="width: 12px; height: 12px; border-radius: 50%; background: {{ category.color }};"></div>
+                    <h3>{{ category.name }}</h3>
+                    <span style="color: #7f8c8d; font-size: 0.9rem;">
+                        ({{ category.user_repair_types|length }})
+                    </span>
+                </div>
 
-                {% if category.user_repair_types %}
-                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1rem;">
-                        {% for repair in category.user_repair_types %}
-                        <div style="background: #f8f9fa; padding: 1rem; border-radius: 5px; border: 1px solid #e9ecef;">
-                            <h4 style="margin: 0 0 0.5rem 0; color: #2c3e50;">{{ repair.name }}</h4>
-
-                            {% if repair.description %}
-                                <div style="margin-bottom: 0.5rem;">
-                                    {{ repair.description }}
-                                </div>
-                            {% endif %}
-
-                            <div style="display: flex; gap: 1rem; flex-wrap: wrap; font-size: 0.9rem;">
-                                {% if repair.typical_duration %}
-                                    <span style="background: #d5edff; padding: 0.2rem 0.5rem; border-radius: 3px;">
-                                        {{ repair.typical_duration }}
-                                    </span>
-                                {% endif %}
-
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">
+                    {% for repair in category.user_repair_types %}
+                    <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; border-left: 3px solid {{ category.color }};">
+                        <div style="display: flex; justify-content: space-between; align-items: start;">
+                            <div style="flex: 1;">
+                                <strong>{{ repair.name }}</strong>
                                 {% if repair.complexity %}
-                                    <span style="background: #ffeaa7; padding: 0.2rem 0.5rem; border-radius: 3px;">
-                                        {{ repair.complexity }}
-                                    </span>
+                                <span style="display: inline-block; margin-left: 0.5rem; padding: 0.1rem 0.5rem; background: #ffeaa7; border-radius: 3px; font-size: 0.8rem;">
+                                    {{ repair.complexity }}
+                                </span>
                                 {% endif %}
                             </div>
+                            <div>
+                                <a href="{% url 'kladez_app:delete_repair_type' repair.pk %}"
+                                   onclick="return confirm('Удалить вид работ \"{{ repair.name }}\"?')"
+                                   style="color: #e74c3c; text-decoration: none; margin-left: 0.5rem;">
+                                    Удалить
+                                </a>
+                            </div>
                         </div>
-                        {% endfor %}
+
+                        {% if repair.description %}
+                        <div style="margin-top: 0.5rem; font-size: 0.9rem; color: #555;">
+                            {{ repair.description|truncatechars:100 }}
+                        </div>
+                        {% endif %}
+
+                        {% if repair.typical_duration %}
+                        <div style="margin-top: 0.5rem; font-size: 0.85rem; color: #7f8c8d;">
+                            ⏱️ {{ repair.typical_duration }}
+                        </div>
+                        {% endif %}
                     </div>
-                {% else %}
-                    <p style="color: #7f8c8d; font-style: italic;">У вас нет видов работ в этой категории</p>
-                {% endif %}
+                    {% endfor %}
+                </div>
             </div>
             {% endif %}
         {% endfor %}
     {% else %}
-        <p style="text-align: center; padding: 2rem; color: #7f8c8d;">
-            Категории работ ещё не добавлены
-        </p>
+        <div style="text-align: center; padding: 3rem; color: #7f8c8d;">
+            <p>Виды работ ещё не добавлены</p>
+            <a href="{% url 'kladez_app:add_repair_type' %}"
+               style="display: inline-block; margin-top: 1rem; padding: 0.5rem 1.5rem; background: #27ae60; color: white; border-radius: 4px; text-decoration: none;">
+                Добавить первый вид работ
+            </a>
+        </div>
     {% endif %}
 </div>
 {% endblock %}

@@ -16,21 +16,36 @@ class CarModelAdmin(admin.ModelAdmin):
 
 @admin.register(RepairCategory)
 class RepairCategoryAdmin(admin.ModelAdmin):
-    list_display = ['name', 'description']
+    list_display = ['name', 'color', 'description']
     search_fields = ['name']
     list_per_page = 20
 
 @admin.register(RepairType)
 class RepairTypeAdmin(admin.ModelAdmin):
-    list_display = ['category', 'name', 'typical_duration', 'complexity']
-    list_filter = ['category']
-    search_fields = ['name', 'category__name']
+    list_display = ['name', 'category', 'user', 'complexity', 'typical_duration']
+    list_filter = ['category', 'user', 'complexity']
+    search_fields = ['name', 'category__name', 'description']
     list_per_page = 20
 
-@admin.register(CompletedWork)
+@admin.register
+class RepairTypeInline(admin.TabularInline):
+    """Inline для отображения видов работ в выполненной работе"""
+    model = CompletedWork.repair_types.through
+    extra = 1
+    verbose_name = "Вид работ"
+    verbose_name_plural = "Виды работ"
+
+@admin.register
 class CompletedWorkAdmin(admin.ModelAdmin):
-    list_display = ['work_date', 'car_brand', 'car_model', 'repair_type', 'cost']
-    list_filter = ['work_date', 'car_brand', 'repair_type__category']
-    search_fields = ['car_brand__name', 'car_model__name', 'notes']
-    date_hierarchy = 'work_date'
-    list_per_page = 25
+    list_display = ['work_date', 'car_brand', 'car_model', 'display_repair_types', 'cost', 'user']
+    list_filter = ['work_date', 'car_brand', 'car_model', 'user']
+    search_fields = ['car_brand__name', 'car_model__name', 'notes', 'parts_used']
+    readonly_fields = ['slug']
+    list_per_page = 20
+    inlines = [RepairTypeInline]
+
+    def display_repair_types(self, obj):
+        """Отображает список видов работ в админке"""
+        return ", ".join([rt.name for rt in obj.repair_types.all()])
+
+    display_repair_types.short_description = 'Виды работ'

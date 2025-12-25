@@ -1,4 +1,5 @@
-from django.urls import path
+from django.urls import path, include
+from .views import ExportImportView
 from . import views
 
 app_name = 'kladez_app'
@@ -17,4 +18,8 @@ urlpatterns = [
     path('register/', views.RegisterUser.as_view(), name='register'),
     path('login/', views.LoginUser.as_view(), name='login'),
     path('logout/', views.logout_user, name='logout'),
+    path('api/', include('kladez_app.api_urls')),
+    path('data-export/', ExportImportView.as_view(), name='data_export'),
+    path('work/<slug:slug>/delete/', views.delete_completed_work, name='delete_completed_work'),
+path('repair-type/<int:pk>/delete/', views.delete_repair_type, name='delete_repair_type'),
 ]

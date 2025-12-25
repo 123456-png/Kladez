@@ -1,0 +1,216 @@
+{% extends "kladez_app/base.html" %}
+
+{% block title %}Экспорт/Импорт данных | Кладезь{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <h1>Экспорт и импорт данных</h1>
+        <p style="color: #7f8c8d; margin-bottom: 2rem;">Экспортируйте данные в различных форматах или импортируйте работы из файлов</p>
+    </div>
+
+    <!-- Экспорт -->
+    <div class="card">
+        <h2 style="margin-bottom: 1rem;">Экспорт данных</h2>
+        <p style="margin-bottom: 1.5rem;">Выберите формат для экспорта ваших работ:</p>
+
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+            <a href="/api/completed-works/export_excel/" class="btn-excel" 
+               style="display: inline-flex; align-items: center; padding: 0.75rem 1.5rem; background: #27ae60; color: white; border-radius: 4px; text-decoration: none; font-weight: bold;">
+                <span style="margin-right: 0.5rem;">📊</span> Excel (.xlsx)
+            </a>
+            
+            <a href="/api/completed-works/export_csv/" class="btn-csv"
+               style="display: inline-flex; align-items: center; padding: 0.75rem 1.5rem; background: #3498db; color: white; border-radius: 4px; text-decoration: none; font-weight: bold;">
+                <span style="margin-right: 0.5rem;">📄</span> CSV
+            </a>
+            
+            <a href="/api/completed-works/export_json/" class="btn-json"
+               style="display: inline-flex; align-items: center; padding: 0.75rem 1.5rem; background: #9b59b6; color: white; border-radius: 4px; text-decoration: none; font-weight: bold;">
+                <span style="margin-right: 0.5rem;">🔤</span> JSON
+            </a>
+        </div>
+        
+        <p style="margin-top: 1rem; color: #95a5a6; font-size: 0.9rem;">
+            <small>Excel файл содержит дополнительный лист со статистикой.</small>
+        </p>
+    </div>
+
+    <!-- Импорт -->
+    <div class="card">
+        <h2 style="margin-bottom: 1rem;">Импорт данных</h2>
+        <p style="margin-bottom: 1rem;">Загрузите Excel или CSV файл для импорта работ:</p>
+
+        <form id="importForm" enctype="multipart/form-data" style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem;">
+            {% csrf_token %}
+            <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                <input type="file" name="file" accept=".xlsx,.csv" required
+                       style="flex: 1; min-width: 200px; padding: 0.75rem; border: 2px dashed #ddd; border-radius: 4px; background: white;">
+                <button type="submit" class="btn-import"
+                        style="padding: 0.75rem 2rem; background: #e67e22; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">
+                    📁 Загрузить файл
+                </button>
+            </div>
+        </form>
+
+        <div id="importResult" style="display: none; margin-bottom: 1.5rem;"></div>
+
+        <p style="margin-bottom: 1rem; color: #95a5a6; font-size: 0.9rem;">
+            <small>Поддерживаемые форматы: .xlsx, .csv. Обязательные колонки: Дата, Марка, Модель, Виды работ, Стоимость (руб)</small>
+        </p>
+
+        <div>
+            <a href="/static/sample_import.xlsx" 
+               style="display: inline-flex; align-items: center; padding: 0.75rem 1.5rem; background: #3498db; color: white; border-radius: 4px; text-decoration: none; font-weight: bold;">
+                <span style="margin-right: 0.5rem;">📋</span> Скачать шаблон
+            </a>
+        </div>
+    </div>
+
+    <!-- Статистика -->
+    <div class="card">
+        <h2 style="margin-bottom: 1rem;">Статистика данных</h2>
+        <div id="stats" style="padding: 1.5rem; background: #f8f9fa; border-radius: 8px;">
+            <div style="display: flex; align-items: center; justify-content: center; min-height: 100px;">
+                <div style="text-align: center; color: #95a5a6;">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">⏳</div>
+                    Загрузка статистики...
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Обработка формы импорта
+    document.getElementById('importForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const formData = new FormData(this);
+        const resultDiv = document.getElementById('importResult');
+        const submitBtn = this.querySelector('button[type="submit"]');
+
+        // Сохраняем оригинальный текст кнопки
+        const originalText = submitBtn.textContent;
+        submitBtn.textContent = 'Импорт...';
+        submitBtn.disabled = true;
+
+        resultDiv.innerHTML = `
+            <div style="background: #fff3cd; color: #856404; padding: 1rem; border-radius: 8px; border-left: 4px solid #f39c12;">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span>⏳</span>
+                    <strong>Идет импорт данных...</strong>
+                </div>
+                <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem;">Пожалуйста, подождите</p>
+            </div>
+        `;
+        resultDiv.style.display = 'block';
+
+        try {
+            const response = await fetch('/api/completed-works/import_excel/', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                resultDiv.innerHTML = `
+                    <div style="background: #d4edda; color: #155724; padding: 1rem; border-radius: 8px; border-left: 4px solid #27ae60;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <span>✅</span>
+                            <strong>${data.message}</strong>
+                        </div>
+                        ${data.errors ? `
+                            <div style="margin-top: 0.5rem; padding: 0.75rem; background: #f8d7da; border-radius: 4px;">
+                                <strong>Ошибки:</strong>
+                                <ul style="margin: 0.5rem 0 0 0; padding-left: 1.5rem;">
+                                    ${data.errors.map(error => `<li>${error}</li>`).join('')}
+                                </ul>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+                loadStats(); // Обновляем статистику
+            } else {
+                resultDiv.innerHTML = `
+                    <div style="background: #f8d7da; color: #721c24; padding: 1rem; border-radius: 8px; border-left: 4px solid #e74c3c;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <span>❌</span>
+                            <strong>Ошибка: ${data.error || 'Неизвестная ошибка'}</strong>
+                        </div>
+                    </div>
+                `;
+            }
+        } catch (error) {
+            resultDiv.innerHTML = `
+                <div style="background: #f8d7da; color: #721c24; padding: 1rem; border-radius: 8px; border-left: 4px solid #e74c3c;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span>🌐</span>
+                        <strong>Ошибка сети: ${error.message}</strong>
+                    </div>
+                </div>
+            `;
+        } finally {
+            // Восстанавливаем кнопку
+            submitBtn.textContent = originalText;
+            submitBtn.disabled = false;
+        }
+    });
+
+    // Загрузка статистики
+    async function loadStats() {
+        const statsDiv = document.getElementById('stats');
+
+        try {
+            const response = await fetch('/api/completed-works/statistics/');
+            const data = await response.json();
+
+            statsDiv.innerHTML = `
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
+                    <div style="text-align: center; padding: 1.5rem; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                        <div style="font-size: 2.5rem; font-weight: bold; color: #2c3e50;">${data.total_works}</div>
+                        <div style="color: #7f8c8d; margin-top: 0.5rem;">Всего работ</div>
+                    </div>
+                    
+                    <div style="text-align: center; padding: 1.5rem; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                        <div style="font-size: 2.5rem; font-weight: bold; color: #27ae60;">${data.total_revenue.toLocaleString()} ₽</div>
+                        <div style="color: #7f8c8d; margin-top: 0.5rem;">Общая выручка</div>
+                    </div>
+                    
+                    <div style="text-align: center; padding: 1.5rem; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                        <div style="font-size: 2.5rem; font-weight: bold; color: #3498db;">${Math.round(data.average_per_work).toLocaleString()} ₽</div>
+                        <div style="color: #7f8c8d; margin-top: 0.5rem;">Средний чек</div>
+                    </div>
+                </div>
+                
+                ${data.by_category && data.by_category.length > 0 ? `
+                    <div style="margin-top: 2rem;">
+                        <h3 style="margin-bottom: 1rem;">Работы по категориям</h3>
+                        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                            ${data.by_category.map(cat => `
+                                <span style="padding: 0.5rem 1rem; background: ${cat.category_color || '#3498db'}; color: white; border-radius: 4px; font-size: 0.9rem;">
+                                    ${cat.category_name}: ${cat.count}
+                                </span>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+            `;
+        } catch (error) {
+            statsDiv.innerHTML = `
+                <div style="text-align: center; color: #e74c3c;">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">❌</div>
+                    Ошибка загрузки статистики
+                </div>
+            `;
+        }
+    }
+
+    // Загружаем статистику при открытии страницы
+    loadStats();
+</script>
+{% endblock %}

@@ -21,8 +21,16 @@
             <strong>Модель:</strong> {{ work.car_model.name }}
         </div>
         
+        <!-- Виды работ -->
         <div style="grid-column: span 2; background: #f8f9fa; padding: 1rem; border-radius: 5px;">
-            <strong>Вид работ:</strong> {{ work.repair_type.category.name }} - {{ work.repair_type.name }}
+            <strong>Выполненные работы:</strong>
+            <div style="margin-top: 0.5rem;">
+                {% for repair in work.repair_types.all %}
+                <div style="display: inline-block; margin: 0.25rem; padding: 0.25rem 0.5rem; background: {{ repair.category.color }}; color: white; border-radius: 3px;">
+                    {{ repair.category.name }}: {{ repair.name }}
+                </div>
+                {% endfor %}
+            </div>
         </div>
         
         {% if work.notes %}
