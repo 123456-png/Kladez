@@ -16,33 +16,32 @@
         </button>
     </div>
 
-    {% if brands_with_models %}
-        <!-- Общая статистика -->
-        <div style="display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap;">
-            <div style="background: #e8f5e8; padding: 1rem; border-radius: 4px; min-width: 200px;">
-                <div style="font-size: 1.2rem; font-weight: bold; color: #27ae60;">
-                    {{ brands_with_models|length }}
-                </div>
-                <div style="color: #7f8c8d;">Марок автомобилей</div>
+    <!-- Общая статистика -->
+    <div style="display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap;">
+        <div style="background: #e8f5e8; padding: 1rem; border-radius: 4px; min-width: 200px;">
+            <div style="font-size: 1.2rem; font-weight: bold; color: #27ae60;">
+                {{ total_brands }}
             </div>
-            <div style="background: #e8f4fd; padding: 1rem; border-radius: 4px; min-width: 200px;">
-                <div style="font-size: 1.2rem; font-weight: bold; color: #3498db;">
-                    {% with total=0 %}
-                        {% for brand in brands_with_models %}
-                            {% with brand.carmodel_set.all|length as count %}
-                                {% with total=total|add:count %}{% endwith %}
-                            {% endwith %}
-                        {% endfor %}
-                        {{ total }}
-                    {% endwith %}
-                </div>
-                <div style="color: #7f8c8d;">Всего моделей</div>
-            </div>
+            <div style="color: #7f8c8d;">Марок автомобилей</div>
         </div>
+        <div style="background: #e8f4fd; padding: 1rem; border-radius: 4px; min-width: 200px;">
+            <div style="font-size: 1.2rem; font-weight: bold; color: #3498db;">
+                {{ total_models }}
+            </div>
+            <div style="color: #7f8c8d;">Всего моделей</div>
+        </div>
+    </div>
 
+    <!-- Информация о текущей странице -->
+    <div style="margin-bottom: 1rem; padding: 0.5rem; background: #fff3cd; border-radius: 4px;">
+        Показаны марки <strong>{{ brands_page.start_index }}–{{ brands_page.end_index }}</strong>
+        из <strong>{{ total_brands }}</strong>. Страница {{ brands_page.number }} из {{ paginator.num_pages }}.
+    </div>
+
+    {% if brands_page %}
         <!-- Детальный список марок и моделей -->
         <div id="brandsList">
-            {% for brand in brands_with_models %}
+            {% for brand in brands_page %}
             <div class="brand-card" style="margin-bottom: 2rem; border: 1px solid #e9ecef; border-radius: 8px; overflow: hidden;">
                 <div style="background: #3498db; color: white; padding: 1rem; display: flex; justify-content: space-between; align-items: center; cursor: pointer;"
                      onclick="toggleModels('models-{{ brand.id }}')">
@@ -111,7 +110,40 @@
             {% endfor %}
         </div>
 
-        <div style="margin-top: 2rem; text-align: center;">
+        <!-- Пагинация -->
+        <div style="margin-top: 2rem; display: flex; justify-content: center; align-items: center;">
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                {% if brands_page.has_previous %}
+                    <a href="?page=1" style="padding: 0.5rem; background: #3498db; color: white; border-radius: 4px; text-decoration: none;">
+                        « Первая
+                    </a>
+                    <a href="?page={{ brands_page.previous_page_number }}" style="padding: 0.5rem; background: #3498db; color: white; border-radius: 4px; text-decoration: none;">
+                        ‹ Назад
+                    </a>
+                {% endif %}
+
+                <span style="padding: 0.5rem 1rem;">
+                    {% for num in paginator.page_range %}
+                        {% if brands_page.number == num %}
+                            <span style="padding: 0.25rem 0.5rem; background: #2c3e50; color: white; border-radius: 3px;">{{ num }}</span>
+                        {% elif num > brands_page.number|add:'-3' and num < brands_page.number|add:'3' %}
+                            <a href="?page={{ num }}" style="padding: 0.25rem 0.5rem; color: #3498db; text-decoration: none;">{{ num }}</a>
+                        {% endif %}
+                    {% endfor %}
+                </span>
+
+                {% if brands_page.has_next %}
+                    <a href="?page={{ brands_page.next_page_number }}" style="padding: 0.5rem; background: #3498db; color: white; border-radius: 4px; text-decoration: none;">
+                        Вперед ›
+                    </a>
+                    <a href="?page={{ paginator.num_pages }}" style="padding: 0.5rem; background: #3498db; color: white; border-radius: 4px; text-decoration: none;">
+                        Последняя »
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <div style="margin-top: 1rem; text-align: center;">
             <button onclick="expandAll()" style="padding: 0.5rem 1.5rem; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 0.5rem;">
                 Развернуть все
             </button>

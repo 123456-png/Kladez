@@ -12,7 +12,7 @@ from .models import CompletedWork, CarBrand, CarModel, RepairType, RepairCategor
 from .forms import CompletedWorkForm, CarBrandForm, CarModelForm, RepairCategoryForm, RepairTypeForm, LoginForm, \
     RegisterForm, DecimalEncoder
 import json
-
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 
 class ExportImportView(TemplateView):
     template_name = 'kladez_app/export_import.html'
@@ -184,16 +184,40 @@ def completed_works(request):
 
     return render(request, 'kladez_app/completed_works.html', context)
 
+
 @login_required
 def car_models_directory(request):
-    """Справочник моделей автомобилей"""
-    brands_with_models = CarBrand.objects.prefetch_related('carmodel_set').all()
+    """Справочник моделей автомобилей с пагинацией"""
+    # Получаем все марки с моделями
+    brands_list = CarBrand.objects.prefetch_related('carmodel_set').all()
+
+    paginator = Paginator(brands_list, 5)
+    page_number = request.GET.get('page')
+
+    try:
+        brands_page = paginator.page(page_number)
+    except PageNotAnInteger:
+        # Если страница не является целым числом, показываем первую страницу
+        brands_page = paginator.page(1)
+    except EmptyPage:
+        # Если страница вне диапазона, показываем последнюю страницу
+        brands_page = paginator.page(paginator.num_pages)
+
+    # Общая статистика (для всех марок, а не только для текущей страницы)
+    total_brands = CarBrand.objects.count()
+    total_models = CarModel.objects.count()
+
+    # Рассчитываем количество моделей для каждой марки на текущей странице
+    for brand in brands_page:
+        brand.model_count = brand.carmodel_set.count()
 
     context = {
-        'brands_with_models': brands_with_models
+        'brands_page': brands_page,
+        'total_brands': total_brands,
+        'total_models': total_models,
+        'paginator': paginator,
     }
     return render(request, 'kladez_app/car_models_directory.html', context)
-
 
 @login_required
 def repair_types_directory(request):
